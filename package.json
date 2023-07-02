@@ -1,5 +1,5 @@
 {
     "scripts":{
-        "start":"xdg-open src/test.html"
+        "start":"xdg-open src/index.html"
     }
 }

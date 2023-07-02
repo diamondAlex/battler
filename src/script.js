@@ -1,8 +1,3 @@
-let player = []
-let opponent = []
-
-let positions = []
-
 let character = () => {
     return {
         test: {
@@ -13,12 +8,7 @@ let character = () => {
     }
 }
 
-let setOpponent = () => {
-    for(let i = 0; i<SLOT_MAX;i++){
-        opponent.push(character())
-    }
-}
-
+let player = []
 let setPlayer = () => {
     for(let i = 0; i<SLOT_MAX;i++){
         player.push(character())
@@ -26,21 +16,33 @@ let setPlayer = () => {
     console.log(player)
 }
 
+// ------------------------------
+let opponent = []
+
+let setOpponent = () => {
+    for(let i = 0; i<SLOT_MAX;i++){
+        opponent.push(character())
+    }
+}
+
+
+let positions = []
+
 let setCharOnBoard = (e) => {
     let player_index = parseInt(e.target.id.slice(-1))
     let slot_index = parseInt(e.target.value) - 1
-    if(!positions[slot_index]){
-        positions[slot_index] =  player[player_index]
-        let slot = document.getElementById("bottom_slot"+slot_index)
-        let image = document.createElement("img")
-        image.src = "images/" + player[player_index].test.image
-        image.className = "slot"
-        slot.append(image)
-    }
+
+    positions[slot_index] =  player[player_index]
+    let slot = document.getElementById("bottom_slot"+slot_index)
+    let image = document.createElement("img")
+    image.src = "images/" + player[player_index].test.image
+    image.className = "slotimage"
+    slot.replaceChildren(image)
     
 }
 
-let setPanels = () =>{
+//will have to auto set the positions
+let SetOpponentPanel = () => {
     let topPanel = document.getElementById("panel_topside") 
 
     topPanel.innerHTML = ""
@@ -59,10 +61,12 @@ let setPanels = () =>{
             <span>
         `
     }
+}
 
+let setPlayerPanel = () =>{
     let botPanel = document.getElementById("panel_botside") 
-
     let x =0
+
     botPanel.innerHTML = ""
     for(char of player){
         let info = char.test
@@ -83,6 +87,15 @@ let setPanels = () =>{
 
 }
 
-setPlayer()
-setOpponent()
-setPanels()
+let setPanels = () => {
+    setPlayerPanel()
+    SetOpponentPanel()
+}
+
+let initGame = () =>{
+    setPlayer()
+    setOpponent()
+    setPanels()
+}
+
+initGame()
