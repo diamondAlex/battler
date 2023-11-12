@@ -1,101 +1,76 @@
-let character = () => {
-    return {
-        test: {
-            hp:10,
-            damage:1,
-            image:Math.ceil(Math.random()*10).toString() + ".png"
+let playTurn = () => {
+    console.log("playing turn")
+    for(let i = positions.length -1;i>=0;i--){
+        let unit = positions[i]
+        if(!unit) continue
+        let index = pickOpponent()
+        if(index == -1) continue
+        let opp = opponent_units[index]
+        if(!(unit.hp <= 0 || opp.hp <= 0)){
+            console.log("player hit")
+            opp.hp = opp.hp - unit.damage
+            if(opp.hp <= 0){
+                dies(opponent_units.length - 1, 'top')
+            }
         }
+    }
+    for(let i = opponent_units.length -1;i>=0;i--){
+        let unit = positions[positions.length - 1]
+        let opp = opponent_units[i]
+        if(!(unit.hp <= 0 || opp.hp <= 0)){
+            console.log("opp hit")
+            unit.hp = unit.hp - opp.damage
+            if(unit.hp <= 0){
+                dies(positions.length - 1, 'bot')
+            }
+        }
+    }
+    updateHps()
+
+    if(!checkForOppAlive()){
+       alert("all dead") 
     }
 }
 
-let player = []
-let setPlayer = () => {
-    for(let i = 0; i<SLOT_MAX;i++){
-        player.push(character())
+function checkForOppAlive(){
+    let alive = false
+    opponent_units.forEach((e) => {
+        if(e.hp > 0){
+            alive = true
+        }
+    })
+    return alive
+}
+
+function pickOpponent(){
+    let len = opponent_units.length - 1
+    console.log(opponent_units)
+    while(opponent_units[len].hp <= 0){
+        len--
+        if(len == -1)
+            return len
     }
+    return len
+}
+
+function dies(index, side){
+    let overlay = document.getElementById(side + "_overlay" +index)
+    overlay.classList.add("dead")
+    player.ressources.gold = player.ressources.gold + opponent_units[index].gold
     console.log(player)
 }
 
-// ------------------------------
-let opponent = []
-
-let setOpponent = () => {
-    for(let i = 0; i<SLOT_MAX;i++){
-        opponent.push(character())
+function updateHps(){
+    for(let i = 0;i<positions.length;i++){
+        let overlay = document.getElementById("bot_overlay"+i)
+        let unit = positions[i]
+        if(!unit) continue
+        overlay.innerHTML = unit.hp + '/' + unit.maxhp
+    }
+    for(let i = 0;i<opponent_units.length;i++){
+        let overlay = document.getElementById("top_overlay"+i)
+        let unit = opponent_units[i]
+        console.log(unit)
+        overlay.innerHTML = unit.hp + '/' + unit.maxhp
     }
 }
-
-
-let positions = []
-
-let setCharOnBoard = (e) => {
-    let player_index = parseInt(e.target.id.slice(-1))
-    let slot_index = parseInt(e.target.value) - 1
-
-    positions[slot_index] =  player[player_index]
-    let slot = document.getElementById("bottom_slot"+slot_index)
-    let image = document.createElement("img")
-    image.src = "images/" + player[player_index].test.image
-    image.className = "slotimage"
-    slot.replaceChildren(image)
-    
-}
-
-//will have to auto set the positions
-let SetOpponentPanel = () => {
-    let topPanel = document.getElementById("panel_topside") 
-
-    topPanel.innerHTML = ""
-    for(char of opponent){
-        let info = char.test
-        topPanel.innerHTML += `
-            <span>
-            <img src=${"images/" + info.image} class="card"> 
-            <select id="card">
-                <option value="" selected disabled hidden>slot</option>
-                <option value='1'>1</option>
-                <option value='2'>2</option>
-                <option value='3'>3</option>
-                <option value='4'>4</option>
-            </select>
-            <span>
-        `
-    }
-}
-
-let setPlayerPanel = () =>{
-    let botPanel = document.getElementById("panel_botside") 
-    let x =0
-
-    botPanel.innerHTML = ""
-    for(char of player){
-        let info = char.test
-        botPanel.innerHTML += `
-            <span>
-            <img src=${"images/" + info.image} class="card"> 
-            <select onchange="setCharOnBoard(event)" id=${"card" + x.toString()}>
-                <option value="" selected disabled hidden>slot</option>
-                <option value='1'>1</option>
-                <option value='2'>2</option>
-                <option value='3'>3</option>
-                <option value='4'>4</option>
-            </select>
-            <span>
-        `
-        x++
-    }
-
-}
-
-let setPanels = () => {
-    setPlayerPanel()
-    SetOpponentPanel()
-}
-
-let initGame = () =>{
-    setPlayer()
-    setOpponent()
-    setPanels()
-}
-
-initGame()
