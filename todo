@@ -1,3 +1,5 @@
 fix the panel to board
 fix the board image sizes
 remove options for opponent
+put hp in top right corner
+add an overlay to slots that's red and transparent indicating hp loss

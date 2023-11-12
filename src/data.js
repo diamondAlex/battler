@@ -1,10 +1,18 @@
-//we'll see if this is fine
-let files = {
-    "player" : "../data/players.js",
-    "units" : "../data/units.js"
-}
+//data
+let player_units = []
 
-let insert = (type, value) =>{
+let positions = []
+
+let opponent_units = []
+
+let player = getItem("player")
+
+let units = getItem("units")
+let maps = getItem("maps")
+let opponents = getItem("opponents")
+
+//serialize
+function insert(type, value){
     let content = localStorage.getItem(type)
     let json
     if(content){
@@ -15,7 +23,7 @@ let insert = (type, value) =>{
     localStorage.setItem(type, JSON.stringify(json))
 }
 
-let remove = (type, key) =>{
+function remove(type, key){
     let content = localStorage.getItem(type)
     let json = JSON.parse(content)
 
@@ -24,10 +32,9 @@ let remove = (type, key) =>{
     }
 
     localStorage.setItem(type, JSON.stringify(json))
-
 }
 
-let update = (type, value) =>{
+function update(type, value){
     let content = localStorage.getItem(type)
     let json = JSON.parse(content)
     let key = Object.keys(value)[0]
@@ -41,5 +48,16 @@ let update = (type, value) =>{
     json = Object.assign(value, json)
 
     localStorage.setItem(type, JSON.stringify(json))
+}
 
+function get(type, key){
+    let content = localStorage.getItem(type)
+    let json = JSON.parse(content)
+    let value = json[key]
+    return value
+}
+
+function getItem(type){
+    let content = localStorage.getItem(type)
+    return JSON.parse(content)
 }
