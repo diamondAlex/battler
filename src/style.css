@@ -59,10 +59,15 @@
     border-color:yellow;
     float:left;
 }
-.card{
+.card_div{
     width:3.5em;
     height:6.5em;
     margin:0.5em;
+    float:left;
+}
+.card{
+    width:3.5em;
+    height:6.5em;
 }
 .overlay{
     position:absolute;
@@ -72,4 +77,8 @@
 .dead{
     background-color:red;
     opacity:0.5;
+}
+.management{
+    height:49%;
+    border:solid
 }

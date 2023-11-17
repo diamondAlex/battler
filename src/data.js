@@ -1,15 +1,34 @@
+//pipes used to add info to initial data
+let pipes = {
+    "units":[
+        function addInventory(units){
+            for(let key of Object.keys(units)){
+                units[key].inventory = {}
+            }
+            return units 
+        }
+    ],
+    "opponents":[
+        function addInventory(units){
+            for(let key of Object.keys(units)){
+                units[key].inventory = {}
+            }
+            return units 
+        }
+    ]
+}
+
 //data
 let player_units = []
-
+let opponent_units = []
 let positions = []
 
-let opponent_units = []
-
 let player = getItem("player")
-
 let units = getItem("units")
 let maps = getItem("maps")
 let opponents = getItem("opponents")
+
+let nbr_levels = 0
 
 //serialize
 function insert(type, value){
@@ -50,14 +69,20 @@ function update(type, value){
     localStorage.setItem(type, JSON.stringify(json))
 }
 
-function get(type, key){
-    let content = localStorage.getItem(type)
-    let json = JSON.parse(content)
-    let value = json[key]
-    return value
+function getUnit(key){
+    let unit = units[key]
+    return unit
 }
 
 function getItem(type){
     let content = localStorage.getItem(type)
-    return JSON.parse(content)
+    content = JSON.parse(content)
+    if(pipes[type]){
+        pipes[type].forEach((e) => e(content))
+    }
+    return content
+}
+
+function clearOpponents(){
+    opponent_units = []    
 }
