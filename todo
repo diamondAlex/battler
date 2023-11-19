@@ -1,5 +1,6 @@
-fix the panel to board
-fix the board image sizes
-remove options for opponent
-put hp in top right corner
-add an overlay to slots that's red and transparent indicating hp loss
+heal after dungeon, either through a mechanic or just to full hp
+clicking on a unit in the bottom right panel of the board should set them in the 1st open slot
+make a screen to start the game. create player and select starter unit
+streamline the page creating process
+make a structure page
+refactor!

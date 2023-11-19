@@ -1,52 +1,75 @@
+//the implementation lacks consistency, opp and player turns are built different
 function playTurn(){
-    console.log(positions)
-    console.log(player_units)
+    //player turn
     for(let i = positions.length -1;i>=0;i--){
         let unit = positions[i]
         if(!unit) continue
-        let index = pickOpponent()
+        let index = pickOpponent(opponent_units)
         if(index == -1) continue
         let opp = opponent_units[index]
         if(!(unit.hp <= 0 || opp.hp <= 0)){
             opp.hp = opp.hp - unit.damage
             if(opp.hp <= 0){
-                dies(opponent_units.length - 1, 'top')
-                setXp(unit, opp.givenXp)
+                dies(index, 'top')
+                setXp(opp.givenXp)
             }
         }
     }
+    //opponent turn
     for(let i = opponent_units.length -1;i>=0;i--){
-        let unit = positions[positions.length - 1]
-        if (!unit) continue
+        let unit = positions[pickOpponent(positions)]
         let opp = opponent_units[i]
         if(!(unit.hp <= 0 || opp.hp <= 0)){
             unit.hp = unit.hp - opp.damage
             if(unit.hp <= 0){
-                dies(positions.length - 1, 'bot')
+                dies(unit, 'bot')
             }
         }
     }
     for(let i = positions.length -1;i>=0;i--){
         let unit = positions[i]
         if(!unit) continue
-        if(unit.spell){
-            spells[unit.spell]() 
+        if(unit.spells.length != 0){
+            spells[unit.spells]() 
         }
     }
     updateHps()
 
     if(!checkForOppAlive()){
+        nbr_levels--
         if(nbr_levels > 0){
-            nbr_levels--
-            alert("all dead") 
+            betweenRound()
             clearOpponents()
             generateBoard() 
         }
         else{
             alert("Dungeon over") 
+            resetHp()
         }
 
     }
+}
+
+function resetHp(){
+    for(let unit of positions){
+        if(unit){
+            unit.hp = unit.maxhp
+        }
+    }
+}
+
+function betweenRound(){
+    let heal = roll([5,10],1)
+    for(unit of positions){
+        if(unit){
+            if(unit.hp < unit.maxhp){
+                unit.hp = unit.hp + heal > unit.maxhp ? unit.maxhp : unit.hp + heal;
+            }
+        }
+    }
+
+    alert(`your units healed for ${heal} hp`)
+
 }
 
 let spells = {
@@ -63,14 +86,20 @@ let spells = {
     }
 }
 
-function setXp(unit, givenXp){
-    unit.exp = unit.exp + givenXp
-    if(unit.exp >= unit.xpPerLvl){
-        unit.lvl = unit.lvl + 1 
-        unit.xpPerLvl = unit.xpPerLvl *2
-
-        unit.maxhp = unit.maxhp + 10
-        unit.damage = unit.damage + 1
+function setXp(givenXp){
+    for(let unit of positions){
+        if(unit){
+            unit.exp = unit.exp + givenXp
+            if(unit.exp >= unit.xpPerLvl){
+                let lvlUpHp = roll(unit.hpPerLvl,1)
+                unit.level = unit.level + 1 
+                unit.xpPerLvl = unit.xpPerLvl * lvlXpRatio
+                unit.exp = 0
+                unit.maxhp = unit.maxhp + lvlUpHp
+                unit.hp = unit.hp + lvlUpHp
+                unit.damage = unit.damage + roll(unit.dmgPerLvl,1)
+            }
+        }
     }
 }
 
@@ -91,20 +120,33 @@ function checkForOppAlive(){
     return alive
 }
 
-function pickOpponent(){
-    let len = opponent_units.length - 1
-    while(opponent_units[len].hp <= 0){
-        len--
-        if(len == -1)
-            return len
+//finds opponent with hp > 0
+function pickOpponent(list){
+    for(let i =list.length; i>=0; i--){
+        if(list[i]){
+            if(list[i].hp > 0){
+                return i
+            }
+        }
     }
-    return len
+    return -1
 }
 
-function dies(index, side){
-    let overlay = document.getElementById(side + "_overlay" +index)
-    overlay.classList.add("dead")
-    player.ressources.gold = player.ressources.gold + opponent_units[index].gold
+function dies(unit, side){
+    if(side == 'top'){
+        let overlay = document.getElementById(side + "_overlay" +unit)
+        overlay.classList.add("dead")
+        player.resources.gold = player.resources.gold + opponent_units[unit].gold
+        if(opponent_units[unit].inventory.length != 0){
+            console.log("adding item")
+            player.inventory.push(...opponent_units[unit].inventory)
+        }
+    }
+    else{
+        let overlay = document.getElementById(side + "_overlay" +unit.uuid)
+        overlay.classList.add("dead")
+        unit.dead = true
+    }
 }
 
 function updateHps(){
