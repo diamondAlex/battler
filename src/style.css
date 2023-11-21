@@ -62,10 +62,9 @@
 .slot{
     position:relative;
     z-index:1;
-    width:15%;
+    width:16%;
     height:80%;
-    margin:1em;
-    margin:1em;
+    margin:1.7em;
     border:solid;
     border-color:yellow;
     float:left;

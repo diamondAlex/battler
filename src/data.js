@@ -52,6 +52,7 @@ let game_units = getItem("game_units")
 let maps = getItem("maps")
 let opponents = getItem("opponents")
 let quests = getItem("quests")
+let structures = getItem("quests")
 
 let nbr_levels = 0
 
@@ -141,6 +142,7 @@ function generatePlayer(){
 }
 
 function generateItem(){
+    console.log("GENERATING ITEM")
     let item =  
         {
             "name": "helm",
@@ -148,7 +150,8 @@ function generateItem(){
             "value":0,
             "effects":[]
         }
-    return item
+    items.push(item)
+    player.inventory.push(item)
 }
 
 function roll(rangeArr, amt){
@@ -196,13 +199,27 @@ function generateOpponent(type,level){
     return opponent 
 }
 
-function generateUnit(type="legio_nigra",level=1){
+function generateStructure(type = "fort",level=3){
+    let template = structures_templates[type]
+    let structure = {
+        name:template.name,
+        image:template.image,
+        level:level,
+        perks:["heal"],
+        description:`Starting structures, heal your units every dungeon, 
+        (unlocks basic shop?)`
+    }
+    structures.push(structure)
+}
+
+function generateUnit(type="legio_nigra",level=1, name){
     let template = units_templates[type]
+    if(name == null) name = selectRandom(list_of_names.filter((e) => e[1] == 'Male'))[0]
     let hp = template.stats.minHp + roll(template.stats.hpPerLvl,level)
     let status = getStatus(level)
 
     let unit = {
-        name:"Sorus",
+        name:name,
         hp:hp,
         maxhp:hp,
         hpPerLvl: template.stats.hpPerLvl,
@@ -221,24 +238,91 @@ function generateUnit(type="legio_nigra",level=1){
     units.push(unit)
 }
 
-function generateMap(rewards = []){
+function selectRandomKey(obj){
+    let keys = Object.keys(obj)
+    let select = selectRandom(keys)
+    return [obj[select],select]
+}
+
+function generateMap(type,rewards, level, levels){
+    let map_type;
+    if(type == null){
+        [map_type, type] = selectRandomKey(maps_templates) 
+    }
+    else{
+        map_type = maps_templates[type]
+    }
+    if(rewards == null){
+        //temporary
+        rewards = []
+    }
+    if(level == null){
+        //temporary
+        level = 1
+    }
+    if(levels == null){
+        levels = 2
+    }
     let map = {
-            "levels":3,
-            "level":10,
-            "name":"Den of Evil",
+            "levels":levels,
+            "level":level,
+            "name":map_type.name,
             "spawn":[
-                "orc"
+                type
             ],
-            "image":"images/maps/orc_1.png",
-            "rewards":rewards
+            "image":"images/maps/" + maps_img_names.pop(),
+            "rewards":[rewards, [() => player.resources.gold += 10*level]]
         }
     maps.push(map)
 }
 
-function generateQuest(reward, type){
+function getRandomMapType(){
+    let types = Object.keys(maps_templates)
+    return selectRandom(types)
+}
 
-    let quest = () => {
-        reward(type)
+function getRandomUnitType(){
+    let types = Object.keys(units_templates)
+    return selectRandom(types)
+}
+
+function getRandomUnitName(){
+    let name = selectRandom(list_of_names)
+    return name[0]
+}
+
+function generateQuest(quest, args, description = "",level=1){
+    let odds = roll([0,100],1)
+    if(quest == null){
+        if(odds > 0){
+            let name = getRandomUnitName()
+            reward = [generateUnit, getRandomUnitType(), roll([1,level],1), name] 
+            //todo, review the way to pick number of levels
+            args = [getRandomMapType(), reward, roll([1,level],1), roll([2,level])]
+            description = "Rescue " + name
+            quest = generateMap
+        }
+        else if(odds > 50){
+            //todo, review the way to pick number of levels
+            args = [getRandomMapType(), [], roll([1,level],1), roll([2,level])]
+            description = "Explore new dungeon"
+            quest = generateMap
+        }
+        else{
+            reward = [generateItem] 
+            args = [getRandomMapType(), reward, roll([1,level],1), roll([2,level])]
+            description = "Locate a new artifact"
+            quest = generateMap
+        }
     }
-    return quest
+    return [() => {
+        quest(...args)
+    }, description]
+}
+
+//add a bunch of resource types, and make them rewards
+//items/maps/unit should all be quest based
+function generateReward(){
+    let types = ["quest", "gold", "essence"]
+    let type = selectRandom(types)
 }

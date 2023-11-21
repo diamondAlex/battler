@@ -1,1 +1,1 @@
-ls src/images/maps | awk 'BEGIN{print "let maps_img_names = ["}{ print "\x27" $1 "\x27" }END{print "]"}' >> src/map_names.js
+ls src/images/maps | awk 'BEGIN{print "let maps_img_names = ["}{ print "\x27" $1 "\x27," }END{print "]"}' > src/map_names.js

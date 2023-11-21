@@ -1,60 +1,92 @@
+let turnEnded = 0
+let dungeonEnded = 0
 //the implementation lacks consistency, opp and player turns are built different
 function playTurn(){
     //player turn
-    for(let i = positions.length -1;i>=0;i--){
-        let unit = positions[i]
-        if(!unit) continue
-        let index = pickOpponent(opponent_units)
-        if(index == -1) continue
-        let opp = opponent_units[index]
-        if(!(unit.hp <= 0 || opp.hp <= 0)){
-            opp.hp = opp.hp - unit.damage
-            if(opp.hp <= 0){
-                dies(index, 'top')
-                setXp(opp.givenXp)
+    if(turnEnded == 0 && dungeonEnded ==0){
+        for(let i = positions.length -1;i>=0;i--){
+            let unit = positions[i]
+            if(!unit) continue
+            let index = pickOpponent(opponent_units)
+            if(index == -1) continue
+            let opp = opponent_units[index]
+            if(!(unit.hp <= 0 || opp.hp <= 0)){
+                opp.hp = opp.hp - unit.damage
+                if(opp.hp <= 0){
+                    dies(index, 'top')
+                    setXp(opp.givenXp)
+                }
             }
         }
-    }
-    //opponent turn
-    for(let i = opponent_units.length -1;i>=0;i--){
-        let unit = positions[pickOpponent(positions)]
-        let opp = opponent_units[i]
-        if(!(unit.hp <= 0 || opp.hp <= 0)){
-            unit.hp = unit.hp - opp.damage
-            if(unit.hp <= 0){
-                dies(unit, 'bot')
+        //opponent turn
+        for(let i = opponent_units.length -1;i>=0;i--){
+            let unit = positions[pickOpponent(positions)]
+            let opp = opponent_units[i]
+            if(!(unit.hp <= 0 || opp.hp <= 0)){
+                unit.hp = unit.hp - opp.damage
+                if(unit.hp <= 0){
+                    dies(unit, 'bot')
+                }
             }
         }
-    }
-    for(let i = positions.length -1;i>=0;i--){
-        let unit = positions[i]
-        if(!unit) continue
-        if(unit.spells.length != 0){
-            spells[unit.spells]() 
+        for(let i = positions.length -1;i>=0;i--){
+            let unit = positions[i]
+            if(!unit) continue
+            if(unit.spells.length != 0){
+                spells[unit.spells]() 
+            }
         }
-    }
-    updateHps()
+        updateHps()
+        if(!checkForOppAlive()){
+            nbr_levels--
+            if(nbr_levels > 0){
+                turnEnded = 1 
+                betweenRound()
+            }
+            else{
+                dungeonEnded = 1
+                displayOnSidePanel("Dungeon Ended")
+                addQuest()
+                runReward()
+            }
 
-    if(!checkForOppAlive()){
-        nbr_levels--
-        if(nbr_levels > 0){
-            betweenRound()
-            clearOpponents()
-            generateBoard() 
         }
-        else{
-            alert("Dungeon over") 
-            resetHp()
+        if(!checkForUnitAlive()){
+            alert("You have been felled! Retreat back to your town")
+            leaveMap()
         }
-
     }
 }
 
-function resetHp(){
-    for(let unit of positions){
-        if(unit){
-            unit.hp = unit.maxhp
+function nextLevel(){
+    if(turnEnded == 1 && dungeonEnded == 0){
+        clearOpponents()
+        generateBoard() 
+        turnEnded = 0
+    }
+}
+
+function runReward(){
+    console.log("RUN REWARD")
+    if(currentMap.rewards.length != 0){
+        for(let reward of currentMap.rewards){
+            if(reward.length!=0){
+                reward[0](...(reward.slice(1)))
+            }
         }
+        displayOnSidePanel(`You've been gifted a reward`)
+        currentMap.rewards = []
+    }
+}
+
+function addQuest(){
+    let odds = Math.floor(Math.random()* 100)
+    if(odds >= 0){
+        //let args = ['orc',[generateUnit,"cleric",2,"Vesta"], 1, 2]
+        //let description = "A QUEST FOR "
+        //let newQuest = generateQuest(generateMap,args, description)
+        let newQuest = generateQuest()
+        quests.push(newQuest)
     }
 }
 
@@ -68,20 +100,34 @@ function betweenRound(){
         }
     }
 
-    alert(`your units healed for ${heal} hp`)
+    displayOnSidePanel(`your units have healed for ${heal}`)
 
 }
 
 let spells = {
-    "heal": () => {
-        for(let i = positions.length -1;i>=0;i--){
-            let unit = positions[i]
-            if(unit){
-                unit.hp = unit.hp + 5
-                if(unit.hp > unit.maxhp){
-                    unit.hp = unit.maxhp
+    "heal": (level) => {
+        let heal = roll([2,5],level)
+        if(positions.length != 0){
+            for(let unit of positions){
+                if(unit){
+                    unit.hp = unit.hp + heal
+                    if(unit.hp > unit.maxhp){
+                        unit.hp = unit.maxhp
+                    }
                 }
             }
+        }
+        else{
+            for(let unit of units){
+                if(unit){
+                    unit.hp = unit.hp + heal
+                    console.log("healed for " + heal)
+                    if(unit.hp > unit.maxhp){
+                        unit.hp = unit.maxhp
+                    }
+                }
+            }
+            
         }
     }
 }
@@ -104,10 +150,23 @@ function setXp(givenXp){
 }
 
 function leaveMap(){
+    dungeonEnded = 0
     player_units = []
     opponent_units = []
     positions = []
     generateManagementPanel()
+}
+
+function checkForUnitAlive(){
+    let alive = false
+    positions.forEach((e) => {
+        if(e){
+            if(e.hp > 0){
+                alive = true
+            }
+        }
+    })
+    return alive
 }
 
 function checkForOppAlive(){
@@ -136,7 +195,6 @@ function dies(unit, side){
     if(side == 'top'){
         let overlay = document.getElementById(side + "_overlay" +unit)
         overlay.classList.add("dead")
-        player.resources.gold = player.resources.gold + opponent_units[unit].gold
         if(opponent_units[unit].inventory.length != 0){
             console.log("adding item")
             player.inventory.push(...opponent_units[unit].inventory)
@@ -145,7 +203,6 @@ function dies(unit, side){
     else{
         let overlay = document.getElementById(side + "_overlay" +unit.uuid)
         overlay.classList.add("dead")
-        unit.dead = true
     }
 }
 
@@ -163,5 +220,17 @@ function updateHps(){
         let overlay = document.getElementById("top_overlay"+i)
         let unit = opponent_units[i]
         overlay.innerHTML = unit.hp + '/' + unit.maxhp
+    }
+}
+
+function runPostDungeon(){
+    for(let structure of structures){
+        console.log(structure)
+        if(structure.perks.length != 0){
+            for(let perk of structure.perks){
+                console.log("RUNNING STRUCT ABILITY")
+                spells[perk](structure.level)
+            }
+        }
     }
 }

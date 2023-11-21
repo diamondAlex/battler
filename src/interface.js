@@ -128,10 +128,19 @@ let addSides = () =>{
     button_leave.innerHTML = "leave"
     button_leave.addEventListener("click", () => {
         leaveMap()
+        runPostDungeon()
+    })
+
+    let button_next = document.createElement("button")
+    button_next.id = "next"
+    button_next.innerHTML = "next"
+    button_next.addEventListener("click", () => {
+        nextLevel()
     })
 
     panel.appendChild(topside)
     panel.appendChild(button)
+    panel.appendChild(button_next)
     panel.appendChild(button_leave)
     panel.appendChild(botside)
 }
@@ -142,7 +151,14 @@ function setOpponent(){
         let unitDiv = document.createElement("div")
         unitDiv.className = "card_div"
 
-        let opponent = getOpponent()
+        let opponent
+
+        if(!opponent_units[i]){
+            opponent = getOpponent()
+        }
+        else{
+            opponent = opponent_units[i]
+        }
         let overlay = document.getElementById("top_overlay"+i)
 
         unitDiv.style.backgroundImage = `url('images/${opponent.image}')`
@@ -151,14 +167,14 @@ function setOpponent(){
 
         overlay.innerHTML = opponent.hp + "/" + opponent.maxhp
         opponent_units.push(opponent)
-        //console.log(opponent_units)
 
         slot.replaceChildren(unitDiv)
         slot.appendChild(overlay)
     }
 }
 
-function setUnit(container, info){
+
+function setUnit(container, info, initial){
     let unitDiv = document.createElement("div")
     unitDiv.id = "unit_" + info.uuid
     unitDiv.className = "card_div"
@@ -172,6 +188,18 @@ function setUnit(container, info){
     overlay.id = "bot_overlay" + info.uuid
     overlay.innerHTML = info.hp + "/" + info.maxhp
 
+
+    //let's keep this one on the shelves for now
+    if(initial){
+        let handleClick = (e) =>{
+            console.log(e)
+            e.target.removeEventListener("click", handleClick)
+            console.log(e.tartget)
+        }
+        unitDiv.addEventListener("click", handleClick)
+    }
+    
+
     unitDiv.appendChild(overlay)
     container.appendChild(unitDiv)
 }
@@ -179,12 +207,11 @@ function setUnit(container, info){
 function setPlayerPanel(){
     let botPanel = document.getElementById("panel_botside") 
     let slot_index = 0
-    console.log(player_units)
     for(unit of player_units){
         if(positions.length == 0){
             let slot = document.getElementById("bot_slot_panel_" + slot_index) 
             slot_index++
-            setUnit(slot, unit)
+            setUnit(slot, unit,1)
         }
         if(positions.find((e) => e? e.uuid == unit.uuid : false) == -1){
             setUnit(botPanel, unit)
@@ -197,6 +224,21 @@ function enableTabButton(){
     button.disabled = false
 }
 
+function displayOnSidePanel(text){
+    let panel = document.getElementById("panel_topside")
+    panel.innerHTML = text
+}
+
+function setBoardBg(){
+    let bg = currentMap.image
+    console.log(bg)
+    tab.style.backgroundImage = `url('${bg}')`
+    tab.style.backgroundSize = 'contain'
+    
+    let board = document.getElementById("board")
+    board.style.backgroundColor = "#545252"
+}
+
 function generateBoard(map){
     if(map != null)
         currentMap = map
@@ -204,6 +246,7 @@ function generateBoard(map){
     addBoard()
     addSides()
     addSlots()
+    setBoardBg()
     initGame()
 }
 
@@ -308,13 +351,80 @@ function setDnd(){
     }
 }
 
+//TOWN TAB -----------------------------------------------------
+function generateTownRightPanel(){
+    leftPanel = document.createElement("div")
+    leftPanel.id = "town_right_panel"
+    leftPanel.className = "right"
+    for(let quest of quests){
+        let div = document.createElement("div")
+        div.innerHTML = quest[1] 
+        div.addEventListener("click", () => {
+        })
+        leftPanel.appendChild(div)
+    }
+
+    tab.append(leftPanel)
+}
+function generateTownLeftPanel(){
+    leftPanel = document.createElement("div")
+    leftPanel.id = "town_left_panel"
+    leftPanel.className = "left"
+    for(let structure of structures){
+        let div = document.createElement("div")
+        div.addEventListener("click", () => {
+            alert("hi :)")
+        })
+
+        let span = document.createElement("span")
+        span.innerHTML = structure.name
+        span.style.position = "relative"
+        span.style.bottom = "100"
+        span.style.fontSize = "200%"
+
+        let image = document.createElement("img")
+        image.src = "images/" + structure.image
+        image.style.margin = "10"
+        image.style.width = "350"
+        image.style.height = "200"
+
+        div.appendChild(image)
+        div.appendChild(span)
+        leftPanel.appendChild(div)
+    }
+
+    tab.append(leftPanel)
+}
+
+function generateTownPanel(){
+    tab.innerHTML = ""
+    generateTownLeftPanel()
+    generateTownRightPanel()
+}
+
 //QUEST TAB -----------------------------------------------------
 
 function generateQuestLeftPanel(){
     leftPanel = document.createElement("div")
     leftPanel.id = "quest_panel"
     leftPanel.className = "left"
-    leftPanel.innerHTML = "QUESTS"
+    for(let quest of quests){
+        let div = document.createElement("div")
+        div.innerHTML = quest[1] 
+        div.addEventListener("click", () => {
+            quest[0]()
+            let new_q_arr = quests.filter((e) => {
+                if(!(e[1] == quest[1])){
+                    return true
+                }
+                return false
+            })
+            quests = new_q_arr
+            alert("you've accepted the quest!")
+            generateQuestPanel()
+        })
+        leftPanel.appendChild(div)
+    }
 
     tab.append(leftPanel)
 }
@@ -379,7 +489,7 @@ function displayInfo(json, keys){
     return str
 }
 
-function displayUnitsOnPanel(e){
+function displayUnitsOnPanel(map){
     let leftPanel = document.getElementById("map_panel")
     leftPanel.innerHTML = ""
     leftPanel.id = "unit_panel"
@@ -394,7 +504,7 @@ function displayUnitsOnPanel(e){
     startButton.innerHTML = "start"
     startButton.addEventListener("click", () =>{
         if(player_units.length > 0)
-            generateBoard(e)
+            generateBoard(map)
     })
     leftPanel.appendChild(startButton)
 
@@ -580,7 +690,7 @@ function initGame(){
 function generateParentInterface(){
     container.innerHTML = ""
     let player_panel = document.createElement("button")
-    player_panel.innerHTML = "Player"
+    player_panel.innerHTML = "Maps"
     player_panel.addEventListener("click", () => generateManagementPanel())
     
     let unit_panel = document.createElement("button")
@@ -591,6 +701,10 @@ function generateParentInterface(){
     quest_panel.innerHTML = "Quests"
     quest_panel.addEventListener("click", () => generateQuestPanel())
 
+    let town_panel = document.createElement("button")
+    town_panel.innerHTML = "Town"
+    town_panel.addEventListener("click", () => generateTownPanel())
+
     let board = document.createElement("button")
     board.id = "board_button"
     board.innerHTML = "Board"
@@ -600,6 +714,7 @@ function generateParentInterface(){
     container.appendChild(player_panel)
     container.appendChild(unit_panel)
     container.appendChild(quest_panel)
+    container.appendChild(town_panel)
     container.appendChild(board)
     container.appendChild(tab)
 
@@ -608,6 +723,8 @@ function generateParentInterface(){
 
 function generateStartInterface(){
     generateUnit()
+    generateStructure()
+    generateMap()
     generateParentInterface()
     //generateMenu() 
 }

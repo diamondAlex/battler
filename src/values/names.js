@@ -1,10 +1,9 @@
-let names = [
+let list_of_names = [
     ["Aelar", "Male"],
     ["Elara", "Female"],
     ["Thorne", "Male"],
     ["Lyra", "Female"],
     ["Galen", "Male"],
-    ["Seraphina", "Female"],
     ["Draven", "Male"],
     ["Elysia", "Female"],
     ["Finnian", "Male"],
@@ -25,6 +24,7 @@ let names = [
     ["Genevieve", "Female"],
     ["Orion", "Male"],
     ["Serafina", "Female"],
+    ["Serafin", "Male"],
     ["Eamon", "Male"],
     ["Rowena", "Female"],
     ["Griffin", "Male"],
