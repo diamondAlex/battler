@@ -1,6 +1,15 @@
-heal after dungeon, either through a mechanic or just to full hp
-clicking on a unit in the bottom right panel of the board should set them in the 1st open slot
-make a screen to start the game. create player and select starter unit
-streamline the page creating process
-make a structure page
-refactor!
+generate manbearpig
+generate background images for dungeon, make them correspond with the smaller maps images
+disable the board button when no dungeons are up
+disable other buttons when on board
+serialization of game data for reload purposes
+make a build to run longer games on, in order to test things beyond the very beginning
+change the alerts() for dialog pop ups with their own style
+limit the image use for characters to 1.
+player creation
+add panels to see player resources both from maps and units
+the maps overlay is bad, rewrite it.
+the quests are dubious. You get a new dungeon in order to find a dungeon? Maybe make is a special one time dungeon?
+resize all portrait to fit correctly
+use drag and drop (yay!) to reorder units in the units tab
+REFACTOR NAMES BRO WTF

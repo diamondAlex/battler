@@ -25,10 +25,6 @@ let pipes = {
         },
     ],
     "opponent_units":[
-        function setStats(opponent){
-            let level = currentMap.level
-            opponent.level = level
-        },
         function getRandomItem(opponent){
             let index = Math.floor(Math.random()* (items.length -1))
             let odds = Math.floor(Math.random()*10*opponent.level)
@@ -52,7 +48,9 @@ let game_units = getItem("game_units")
 let maps = getItem("maps")
 let opponents = getItem("opponents")
 let quests = getItem("quests")
-let structures = getItem("quests")
+
+let unit_structures = getItem("unit_structures")
+let structures = getItem("structures")
 
 let nbr_levels = 0
 
@@ -141,21 +139,36 @@ function generatePlayer(){
     }
 }
 
-function generateItem(){
-    console.log("GENERATING ITEM")
+let item_uuid = 0
+function generateItem(type,level){
+    if(type == null){
+        type = selectRandom(Object.keys(items_templates))    
+    }
+    if(level == null){
+        level = roll([1,10],1)
+    }
+    let template = items_templates[type]
     let item =  
         {
-            "name": "helm",
-            "image": "items/helm.png",
-            "value":0,
-            "effects":[]
+            name:selectRandom(template.quality) + " " 
+                    + selectRandom(template.names) + " "
+                    + selectRandom(template.qualifier),
+            type:type,
+            image: selectRandom(template.images),
+            perks:[selectRandom(template.perks)],
+            armor:roll(template.armor,level),
+            uuid:item_uuid
         }
     items.push(item)
     player.inventory.push(item)
+    item_uuid++
 }
 
-function roll(rangeArr, amt){
+function roll(rangeArr, amt=1){
     let total = rangeArr[0]
+    let min = rangeArr[0]
+    let max = rangeArr[1]
+    max = max < min ? min: max;
     for(let i=0;i<amt;i++){
         total = total + Math.floor(Math.random()*(rangeArr[1] - rangeArr[0]))
     }
@@ -172,15 +185,20 @@ function getStatus(lvl){
 }
 
 function selectRandom(list){
-    let index = Math.floor(Math.random() * list.length)    
-    return list[index]
+    try{
+        let index = Math.floor(Math.random() * list.length)    
+        return list[index]
+    }catch(err){
+        console.log(err)
+        console.log(list)
+    }
 }
 
 function generateOpponent(type,level){
     let template = opponents_templates[type]
     let hp = template.stats.minHp + roll(template.stats.hpPerLvl,level)
     let status = getStatus(level)
-
+    level = roll([level <= 1 ? 1: level-1, level+3],1)
     let opponent = {
             type:type,
             name: selectRandom(template.name[status]) + ", " 
@@ -189,26 +207,31 @@ function generateOpponent(type,level){
             maxhp:hp,
             damage:template.stats.damage * level,
             level:level,
-            exp: 10 * Math.pow(level, lvlXpRatio),
-            xpPerLvl:10 * Math.pow(level, lvlXpRatio),
+            exp: Math.round(10 * Math.pow(level, lvlXpRatio)),
+            xpPerLvl:Math.round(10 * Math.pow(level, lvlXpRatio)),
             image: selectRandom(template.images[status]),
-            givenXp: 1 * Math.pow(level, givenXpRatio),
+            givenXp: Math.round(1 * Math.pow(level, givenXpRatio)),
             inventory:[],
             spells:[]
         }
     return opponent 
 }
 
+let struct_uuid = 0
 function generateStructure(type = "fort",level=3){
     let template = structures_templates[type]
     let structure = {
         name:template.name,
         image:template.image,
+        uuid:struct_uuid,
         level:level,
+        cost:{"gold":100},
         perks:["heal"],
+        inventory:{},
         description:`Starting structures, heal your units every dungeon, 
         (unlocks basic shop?)`
     }
+    struct_uuid++
     structures.push(structure)
 }
 
@@ -220,6 +243,7 @@ function generateUnit(type="legio_nigra",level=1, name){
 
     let unit = {
         name:name,
+        type:type,
         hp:hp,
         maxhp:hp,
         hpPerLvl: template.stats.hpPerLvl,
@@ -230,7 +254,7 @@ function generateUnit(type="legio_nigra",level=1, name){
         xpPerLvl:10 * Math.pow(level, lvlXpRatio),
         image: selectRandom(template.images[status]),
         givenXp: 10 * Math.pow(level, givenXpRatio),
-        inventory:[],
+        inventory:{},
         spells:[],
         uuid:uuid
     }
@@ -258,10 +282,10 @@ function generateMap(type,rewards, level, levels){
     }
     if(level == null){
         //temporary
-        level = 1
+        level = 2
     }
     if(levels == null){
-        levels = 2
+        levels = 8
     }
     let map = {
             "levels":levels,
@@ -276,6 +300,7 @@ function generateMap(type,rewards, level, levels){
     maps.push(map)
 }
 
+//this can be simplified
 function getRandomMapType(){
     let types = Object.keys(maps_templates)
     return selectRandom(types)
@@ -291,10 +316,15 @@ function getRandomUnitName(){
     return name[0]
 }
 
+function getRandomStructure(){
+    let types = selectRandom(structures_templates)
+    return selectRandom(types)
+}
+
 function generateQuest(quest, args, description = "",level=1){
     let odds = roll([0,100],1)
     if(quest == null){
-        if(odds > 0){
+        if(odds > 90){
             let name = getRandomUnitName()
             reward = [generateUnit, getRandomUnitType(), roll([1,level],1), name] 
             //todo, review the way to pick number of levels
@@ -302,13 +332,20 @@ function generateQuest(quest, args, description = "",level=1){
             description = "Rescue " + name
             quest = generateMap
         }
-        else if(odds > 50){
+        else if(odds > 70){
             //todo, review the way to pick number of levels
             args = [getRandomMapType(), [], roll([1,level],1), roll([2,level])]
             description = "Explore new dungeon"
             quest = generateMap
         }
-        else{
+        else if(odds > 50){
+            //todo, review the way to pick number of levels
+            reward = [generateStructure, getRandomStructure(), roll([3,level],1)] 
+            args = [getRandomMapType(), reward, roll([1,level],1), roll([2,level])]
+            description = "find a new blueprint"
+            quest = generateMap
+        }
+        else if(odds > 30){
             reward = [generateItem] 
             args = [getRandomMapType(), reward, roll([1,level],1), roll([2,level])]
             description = "Locate a new artifact"
@@ -325,4 +362,13 @@ function generateQuest(quest, args, description = "",level=1){
 function generateReward(){
     let types = ["quest", "gold", "essence"]
     let type = selectRandom(types)
+}
+
+function addStructure(structure){
+    let newStructs = structures.filter((e) => e.uuid != structure.uuid)
+    if(player.resources.gold >= structure.cost["gold"]){
+        unit_structures.push(structure)
+        structures = newStructs
+        player.resources.gold -= structure.cost["gold"]
+    }
 }

@@ -42,7 +42,7 @@ function generateInitialData(){
     initData()
 }
 
-//BATTLE INTERFACE---------------------------------------------------
+//BOARD---------------------------------------------------
 let addSlots = () => {
     let topside = document.getElementById("board_topside")
     let botside = document.getElementById("board_botside")
@@ -76,10 +76,10 @@ let addSlots = () => {
 let addBoard = () =>{
     let board = document.createElement("div")
     board.id = "board"
-    board.className = "left"
+    board.className = "left board"
     let panel = document.createElement("div")
     panel.id = "panel"
-    panel.className = "right"
+    panel.className = "right board"
 
     tab.innerHTML = ""
     tab.append(board)
@@ -102,7 +102,7 @@ let addSides = () =>{
     let panel = document.getElementById("panel")
     topside = document.createElement("div")
     topside.id = "panel_topside"
-    topside.classList.add("panel","side","top")
+    topside.classList.add("panel","side","top_panel")
     topside.innerHTML = JSON.stringify(currentMap)
 
     botside = document.createElement("div")
@@ -118,14 +118,16 @@ let addSides = () =>{
 
     let button = document.createElement("button")
     button.id = "play"
-    button.innerHTML = "play"
+    button.className = "board_button"
+    button.innerHTML = "Play"
     button.addEventListener("click", () => {
         playTurn()
     })
 
     let button_leave = document.createElement("button")
     button_leave.id = "leave"
-    button_leave.innerHTML = "leave"
+    button_leave.className = "board_button"
+    button_leave.innerHTML = "Leave"
     button_leave.addEventListener("click", () => {
         leaveMap()
         runPostDungeon()
@@ -133,7 +135,8 @@ let addSides = () =>{
 
     let button_next = document.createElement("button")
     button_next.id = "next"
-    button_next.innerHTML = "next"
+    button_next.className = "board_button"
+    button_next.innerHTML = "Next"
     button_next.addEventListener("click", () => {
         nextLevel()
     })
@@ -162,11 +165,15 @@ function setOpponent(){
         let overlay = document.getElementById("top_overlay"+i)
 
         unitDiv.style.backgroundImage = `url('images/${opponent.image}')`
-        unitDiv.style.backgroundSize = "contain"
-        unitDiv.style.backgroundRepeat = "no-repeat"
+        unitDiv.style.backgroundSize = "cover"
 
         overlay.innerHTML = opponent.hp + "/" + opponent.maxhp
         opponent_units.push(opponent)
+
+        unitDiv.addEventListener("click", (e) => {
+            let div = document.getElementById("panel_topside") 
+            div.innerHTML = displayInfo(opponent, ["type","name","hp","damage","level","xpPerLvl","givenXp"])
+        })
 
         slot.replaceChildren(unitDiv)
         slot.appendChild(overlay)
@@ -174,31 +181,25 @@ function setOpponent(){
 }
 
 
-function setUnit(container, info, initial){
+function setUnit(container, unit){
     let unitDiv = document.createElement("div")
-    unitDiv.id = "unit_" + info.uuid
+    unitDiv.id = "unit_" + unit.uuid
     unitDiv.className = "card_div"
     unitDiv.draggable = true
     unitDiv.ondragstart = selectUnit
-    unitDiv.style.backgroundImage = `url('images/${info.image}')`
-    unitDiv.style.backgroundSize = "contain"
+    unitDiv.style.backgroundImage = `url('images/${unit.image}')`
+    unitDiv.style.backgroundSize = "cover"
     unitDiv.style.backgroundRepeat = "no-repeat"
     let overlay = document.createElement("div")
     overlay.className = "overlay"
-    overlay.id = "bot_overlay" + info.uuid
-    overlay.innerHTML = info.hp + "/" + info.maxhp
+    overlay.id = "bot_overlay" + unit.uuid
+    overlay.innerHTML = unit.hp + "/" + unit.maxhp
 
 
-    //let's keep this one on the shelves for now
-    if(initial){
-        let handleClick = (e) =>{
-            console.log(e)
-            e.target.removeEventListener("click", handleClick)
-            console.log(e.tartget)
-        }
-        unitDiv.addEventListener("click", handleClick)
-    }
-    
+    unitDiv.addEventListener("click", (e) => {
+        let div = document.getElementById("panel_topside")
+        div.innerHTML = displayInfo(unit,["name","type","hpPerLvl","damage","exp","xpPerLvl","level"])
+    })
 
     unitDiv.appendChild(overlay)
     container.appendChild(unitDiv)
@@ -211,7 +212,7 @@ function setPlayerPanel(){
         if(positions.length == 0){
             let slot = document.getElementById("bot_slot_panel_" + slot_index) 
             slot_index++
-            setUnit(slot, unit,1)
+            setUnit(slot, unit)
         }
         if(positions.find((e) => e? e.uuid == unit.uuid : false) == -1){
             setUnit(botPanel, unit)
@@ -231,15 +232,22 @@ function displayOnSidePanel(text){
 
 function setBoardBg(){
     let bg = currentMap.image
-    console.log(bg)
     tab.style.backgroundImage = `url('${bg}')`
     tab.style.backgroundSize = 'contain'
     
-    let board = document.getElementById("board")
-    board.style.backgroundColor = "#545252"
+    //let div = document.getElementById("board_topside")
+    //div.style.backgroundColor = "#545252"
+    //div = document.getElementById("board_botside")
+    //div.style.backgroundColor = "#545252"
+    //div = document.getElementById("panel_botside")
+    //div.style.backgroundColor = "#545252"
+    //div = document.getElementById("panel_topside")
+    //div.style.backgroundColor = "#545252"
 }
 
 function generateBoard(map){
+    tab.innerHTML = ""
+    tab.style = ""
     if(map != null)
         currentMap = map
     enableTabButton()
@@ -353,43 +361,72 @@ function setDnd(){
 
 //TOWN TAB -----------------------------------------------------
 function generateTownRightPanel(){
-    leftPanel = document.createElement("div")
-    leftPanel.id = "town_right_panel"
-    leftPanel.className = "right"
-    for(let quest of quests){
+    let rightPanel = document.createElement("div")
+    rightPanel.id = "town_right_panel"
+    rightPanel.className = "right town_right"
+    for(let structure of structures){
         let div = document.createElement("div")
-        div.innerHTML = quest[1] 
-        div.addEventListener("click", () => {
+        div.className="town_div"
+
+        let span = document.createElement("span")
+        span.innerHTML = structure.name
+        span.className="town_name"
+
+        let info = document.createElement("span")
+        info.innerHTML = displayInfo(structure,["cost"])
+        info.className = "town_info"
+
+        let image = document.createElement("img")
+        image.src = "images/" + structure.image
+        image.className = "town_image"
+        image.addEventListener("click", () => {
+            addStructure(structure)
+            generateTownPanel()
         })
-        leftPanel.appendChild(div)
+
+        div.appendChild(image)
+        div.appendChild(span)
+        div.appendChild(info)
+        rightPanel.appendChild(div)
     }
 
-    tab.append(leftPanel)
+    tab.style.backgroundImage = "url('images/bg/town.png')"
+    tab.style.backgroundSize = "cover"
+    tab.append(rightPanel)
 }
 function generateTownLeftPanel(){
     leftPanel = document.createElement("div")
     leftPanel.id = "town_left_panel"
     leftPanel.className = "left"
-    for(let structure of structures){
+    for(let structure of unit_structures){
         let div = document.createElement("div")
-        div.addEventListener("click", () => {
-            alert("hi :)")
-        })
+        div.style.width = "100%"
+        div.style.height = "38%"
+        div.style.padding = "10"
 
         let span = document.createElement("span")
         span.innerHTML = structure.name
-        span.style.position = "relative"
-        span.style.bottom = "100"
+        span.style.width = "30%"
         span.style.fontSize = "200%"
+
+        let info = document.createElement("span")
+        info.style.wordWrap = "break-word"
+        info.innerHTML = "<br>" + displayInfo(structure,["name","level","perks","description"])
+        info.style.float="left"
+        info.style.width = "40%"
+        info.style.height = "20%"
+        info.style.fontSize = "100%"
 
         let image = document.createElement("img")
         image.src = "images/" + structure.image
-        image.style.margin = "10"
+        image.style.float = "left"
+        image.style.marginRight = "10"
         image.style.width = "350"
         image.style.height = "200"
 
         div.appendChild(image)
         div.appendChild(span)
+        div.appendChild(info)
         leftPanel.appendChild(div)
     }
 
@@ -398,6 +435,7 @@ function generateTownLeftPanel(){
 
 function generateTownPanel(){
     tab.innerHTML = ""
+    tab.style = ""
     generateTownLeftPanel()
     generateTownRightPanel()
 }
@@ -407,7 +445,7 @@ function generateTownPanel(){
 function generateQuestLeftPanel(){
     leftPanel = document.createElement("div")
     leftPanel.id = "quest_panel"
-    leftPanel.className = "left"
+    leftPanel.className = "left quest_panel"
     for(let quest of quests){
         let div = document.createElement("div")
         div.innerHTML = quest[1] 
@@ -426,15 +464,18 @@ function generateQuestLeftPanel(){
         leftPanel.appendChild(div)
     }
 
+    tab.style.backgroundImage = "url('images/bg/quest.png')"
+    tab.style.backgroundSize = "cover"
     tab.append(leftPanel)
 }
 
 function generateQuestPanel(){
     tab.innerHTML = ""
+    tab.style = ""
     generateQuestLeftPanel()
 }
 
-//MANAGEMENT TAB -----------------------------------------------------
+//MANAGEMENT TAB MAPS-----------------------------------------------------
 function displayMapsOnPanel(){
     let leftPanel = document.getElementById("unit_panel")
     if(!leftPanel){
@@ -442,7 +483,7 @@ function displayMapsOnPanel(){
         tab.append(leftPanel)
     }
     leftPanel.id = "map_panel"
-    leftPanel.className = "left"
+    leftPanel.className = "left map_panel"
     leftPanel.innerHTML = ""
 
     let unit_button = document.createElement("button")
@@ -469,10 +510,370 @@ function displayMapsOnPanel(){
 
         leftPanel.appendChild(button)
     }
-
-
-    
 }
+
+function displayUnitsOnPanel(map){
+    let leftPanel = document.getElementById("map_panel")
+    if(!leftPanel) leftPanel = document.getElementById("unit_panel")
+    leftPanel.innerHTML = ""
+    leftPanel.id = "unit_panel"
+    leftPanel.className = "left map_panel"
+
+    let map_button = document.createElement("button")
+    map_button.innerHTML = "maps <<"
+    map_button.addEventListener("click", () =>{
+        displayMapsOnPanel()
+        showPlayerInfoPanel()
+    })
+    leftPanel.appendChild(map_button)
+
+    let startButton = document.createElement("button")
+    startButton.innerHTML = "start"
+    startButton.addEventListener("click", () =>{
+        if(player_units.length > 0)
+            generateBoard(map)
+    })
+    leftPanel.appendChild(startButton)
+    let skipButton = document.createElement("button")
+    skipButton.innerHTML = "skip"
+    skipButton.addEventListener("click", () =>{
+        console.log("click!")
+        if(player.resources.gold > 100){
+            console.log(player)
+            player.resources.gold -= 100
+            runPostDungeon()
+            displayUnitsOnPanel()
+        }
+        else{
+            alert("You have ran out of money. Get fukt")
+        }
+    })
+    leftPanel.appendChild(skipButton)
+
+    let unitButtons = units.map((unit) => {
+        let div = document.createElement("div")
+        div.className ="unit_info_div"
+
+        let span = document.createElement("span")
+        span.innerHTML = displayInfo(unit, ["name", "damage","hp", "maxhp","level"])
+        span.className = "unit_info"
+
+        let img = document.createElement("img")
+        img.src = "images/" + unit.image
+        img.className ="unit_info_img"
+        img.addEventListener("click", () =>{
+            addUnit(unit)
+        })
+        div.appendChild(img)
+        div.appendChild(span)
+        return div
+    })
+    unitButtons.forEach((e) => leftPanel.appendChild(e))
+    displayUnitsOnRightPanel()
+}
+
+function generateRightInfoPanel(){
+    let rightPanel = document.createElement("div")
+    rightPanel.id = "right_panel"
+    rightPanel.className = "right map_panel"
+    tab.append(rightPanel)
+}
+
+function showPlayerInfoPanel(){
+    let playerPanel = document.getElementById("player_panel")
+    playerPanel.innerHTML = displayInfo(player, ['name','resources'])
+}
+function generatePlayerInfoPanel(){
+    let rightPanel = document.getElementById("right_panel")
+    let playerPanel = document.createElement("div")
+    playerPanel.id = "player_panel"
+    playerPanel.className = "management_top map_panel"
+
+    rightPanel.append(playerPanel)
+    showPlayerInfoPanel()
+}
+
+function generateMapInfoPanel(){
+    let rightPanel = document.getElementById("right_panel")
+    let mapPanel = document.createElement("div")
+    mapPanel.id = "map_info_panel"
+    mapPanel.className = "management_bot"
+    mapPanel.innerHTML = "Map"
+
+    rightPanel.append(mapPanel)
+}
+
+//a whole function, really?
+function setNrb_level(nbr){
+    nbr_levels = nbr
+}
+
+function fillMapInfoPanel(map){
+    let mapPanel = document.getElementById("map_info_panel")
+    mapPanel.innerHTML = JSON.stringify(map)
+    setNrb_level(map.levels)
+}
+
+//test function
+function addUnit(unit){
+    if(player_units.length >= 4){
+        alert("too many units") 
+        return
+    }
+    let exits = player_units.find((e) => e.uuid == unit.uuid)
+    if(exits)
+        return
+    player_units.push(unit)
+    
+    displayUnitsOnRightPanel()
+}
+
+function displayUnitsOnRightPanel(){
+    let playerPanel = document.getElementById("player_panel")
+    playerPanel.innerHTML = ""
+    for(let unit of player_units){
+        let img = document.createElement("img")
+        img.id = "unit_right_man_panel_" + unit.uuid
+        img.src = "images/"+unit.image
+        img.width = 100
+        img.height = 150
+        img.addEventListener("click", (event) => {
+            player_units = player_units.filter((e) => e.uuid != unit.uuid)
+            let img = document.getElementById("unit_right_man_panel_" + unit.uuid)
+            img.remove()
+        })
+        playerPanel.appendChild(img)
+    }
+}
+
+function generateManagementPanel(){
+    tab.innerHTML = ""
+    tab.style = ""
+    tab.style.backgroundImage = "url('images/bg/maps.png')"
+    tab.style.backgroundSize = "cover"
+    displayMapsOnPanel()
+    generateRightInfoPanel()
+    generatePlayerInfoPanel()
+    generateMapInfoPanel()
+}
+
+// UNIT panel ---------------------------------------------------
+function generateUnitPanel(){
+    tab.innerHTML = ""
+    tab.style = ""
+    tab.style.backgroundImage = "url('images/bg/units.png')"
+    tab.style.backgroundSize = "cover"
+
+    generateUnitLeftPanel()
+    generateUnitRightPanel()
+}
+function generateUnitLeftPanel(){
+    let unit_info_panel = document.createElement("div")
+    unit_info_panel.id = "unit_info_panel"
+    unit_info_panel.className = "unit_right map_panel"
+    unit_info_panel.innerHTML = ""
+    let unit_div = document.createElement("div")
+    unit_div.id = "unit_div"
+    unit_div.className = "unit_left map_panel"
+    unit_div.innerHTML = ""
+
+    let unitButtons = units.map((unit) => {
+        let div = document.createElement("div")
+        div.className = "unit_info_div"
+        let span = document.createElement("span")
+        span.innerHTML = displayInfo(unit, Object.keys(unit).slice(0,-5))
+        span.className = "unit_info"
+        let img = document.createElement("img")
+        img.src = "images/" + unit.image
+        img.className = "unit_info_img"
+        img.addEventListener("click", () =>{
+            currentUnit = unit
+            generateUnitRightPanel()
+        })
+        div.appendChild(img)
+        div.appendChild(span)
+        return div
+    })
+    unitButtons.forEach((e) => unit_div.appendChild(e))
+
+    tab.appendChild(unit_div)
+    tab.appendChild(unit_info_panel)
+}
+
+function generateUnitInventoryPanel(){
+    let panel = document.getElementById("unit_info_panel") 
+    let unit_inventory = document.getElementById("unit_inventory")
+    unit_inventory.className = "unit_inventory"
+
+    if(!currentUnit){
+        unit_inventory.innerHTML = "Select a unit"
+        panel.appendChild(unit_inventory)
+        return 
+    }
+    
+    //todo make this a loop
+    unit_inventory.id = "unit_inventory"
+    unit_inventory.className = "unit_inventory"
+    unit_inventory.style.backgroundImage = "url('images/bg/inventory.png')"
+    unit_inventory.style.backgroundSize = "cover"
+
+    let helm_slot = document.createElement("div")
+    helm_slot.className = "item_slot"
+    helm_slot.id ="helm_slot"
+    helm_slot.innerHTML = "HELM"
+    helm_slot.style.left = "42%"
+    helm_slot.style.top = "2%"
+
+    let weapon_slot = document.createElement("div")
+    weapon_slot.className = "item_slot"
+    weapon_slot.id ="weapon_slot"
+    weapon_slot.innerHTML = "WEAPON"
+    weapon_slot.style.left = "5%"
+    weapon_slot.style.top = "30%"
+
+    let armor_slot = document.createElement("div")
+    armor_slot.className = "item_slot"
+    armor_slot.id ="armor_slot"
+    armor_slot.innerHTML = "ARMOR"
+    armor_slot.style.left = "42%"
+    armor_slot.style.bottom = "5%"
+
+    let shield_slot = document.createElement("div")
+    shield_slot.className = "item_slot"
+    shield_slot.id ="shield_slot"
+    shield_slot.innerHTML = "SHIELD"
+    shield_slot.style.left = "78%"
+    shield_slot.style.bottom = "2%"
+
+    let boots_slot = document.createElement("div")
+    boots_slot.className = "item_slot"
+    boots_slot.id ="boots_slot"
+    boots_slot.innerHTML = "BOOTS"
+    boots_slot.style.left = "42%"
+    boots_slot.style.top = "15%"
+
+    let info_slot = document.createElement("div")
+    info_slot.className = "info_slot"
+    info_slot.id ="info_slot"
+    info_slot.innerHTML = currentUnit.name
+    info_slot.style.left = "2%"
+    info_slot.style.top = "2%"
+
+    unit_inventory.appendChild(info_slot)
+    unit_inventory.appendChild(helm_slot)
+    unit_inventory.appendChild(weapon_slot)
+    unit_inventory.appendChild(armor_slot)
+    unit_inventory.appendChild(shield_slot)
+    unit_inventory.appendChild(boots_slot)
+
+    panel.appendChild(unit_inventory)
+
+    if(currentUnit){
+        showUnitInventory(currentUnit)
+    }
+}
+
+
+function generateUnitRightPanel(){
+    let panel = document.getElementById("unit_info_panel") 
+    panel.innerHTML = ""
+    let player_inventory = document.createElement("div")
+    player_inventory.id = "player_inventory"
+    player_inventory.className = "player_inventory"
+    let unit_inventory = document.createElement("div")
+    unit_inventory.id = "unit_inventory"
+
+    panel.appendChild(player_inventory)
+    panel.appendChild(unit_inventory)
+
+    showPlayerInventory()
+
+    generateUnitInventoryPanel()
+}
+
+function showPlayerInventory(){
+    let panel = document.getElementById("player_inventory")
+    panel.innerHTML = ""
+    let inventory = player.inventory
+    for(let item of inventory){
+        let div = document.createElement("div")
+        div.className = "player_inventory_div"
+        let img = document.createElement("img")
+        img.className = "player_inventory_img"
+        img.src = "images/" + item.image
+        img.width = 90
+        img.heigh = 180
+        img.addEventListener("click", (e) =>{
+            addItemToUnit(item) 
+        })
+        let span = document.createElement('span')
+        span.innerHTML = item.name
+        span.className = "player_inventory_info"
+
+
+        div.appendChild(img)
+        div.appendChild(span)
+        panel.appendChild(div)
+    }
+}
+
+function addItemToUnit(item){
+    let item_slot = document.getElementById("shield" + "_slot")
+    console.log(item_slot)
+
+    let unit = currentUnit
+    if(!unit) return
+    let type = item["type"]
+    unit.inventory[type] = item
+    player.inventory = player.inventory.filter((e) => e.uuid != item.uuid)
+
+    showPlayerInventory()
+    showUnitInventory(unit)
+}
+
+let currentUnit
+function showUnitInventory(unit){
+    let item_slot = document.getElementById("shield" + "_slot")
+    console.log(item_slot)
+    console.log(item_slot.children)
+    currentUnit = unit
+    for(let key of Object.keys(unit.inventory)){
+        console.log(key)
+        let item = unit.inventory[key]
+        let item_slot = document.getElementById(key + "_slot")
+        item_slot.innerHTML = ""
+        item_slot.className = "item_slot"
+
+        let removeItem = () =>{
+            console.log(currentUnit.inventory)
+            console.log(key)
+            let item = currentUnit.inventory[key]
+            console.log(item)
+            player.inventory.push(item)
+            delete currentUnit.inventory[key]
+            let item_slot = document.getElementById(key + "_slot")
+            item_slot.innerHTML = key
+            item_slot.className = "item_slot"
+            item_slot.removeEventListener("click", removeItem)
+            showPlayerInventory()
+        }
+        //If the item is already in inventory, we need to avoid adding a new event
+        let image = document.createElement("img")
+        image.src = "images/" + item.image
+        image.className = "inventory_image"
+        //todo actually fix this bug
+        if(key == "helm"){
+            image.style.position = "relative"
+            image.style.bottom = 23
+            image.style.right = 3
+        }
+        image.addEventListener("click", removeItem)
+
+        item_slot.appendChild(image)
+    }
+}
+
+// UTILS
 
 function displayInfo(json, keys){
     let str = ''
@@ -489,197 +890,6 @@ function displayInfo(json, keys){
     return str
 }
 
-function displayUnitsOnPanel(map){
-    let leftPanel = document.getElementById("map_panel")
-    leftPanel.innerHTML = ""
-    leftPanel.id = "unit_panel"
-    leftPanel.className = "left"
-
-    let map_button = document.createElement("button")
-    map_button.innerHTML = "maps <<"
-    map_button.addEventListener("click", displayMapsOnPanel)
-    leftPanel.appendChild(map_button)
-
-    let startButton = document.createElement("button")
-    startButton.innerHTML = "start"
-    startButton.addEventListener("click", () =>{
-        if(player_units.length > 0)
-            generateBoard(map)
-    })
-    leftPanel.appendChild(startButton)
-
-    let unitButtons = units.map((unit) => {
-        let div = document.createElement("div")
-        let span = document.createElement("span")
-        span.innerHTML = displayInfo(unit, ["name", "damage","hp", "maxhp","level"])
-        span.style.display ="inline-block"
-        span.style.width = 300
-        span.style.border = "solid"
-        span.style.wordWrap = "break-word"
-        let img = document.createElement("img")
-        img.src = "images/" + unit.image
-        img.width = 100
-        img.height = 150
-        img.addEventListener("click", () =>{
-            addUnit(unit)
-        })
-        div.appendChild(img)
-        div.appendChild(span)
-        return div
-    })
-    unitButtons.forEach((e) => leftPanel.appendChild(e))
-}
-
-function generateRightInfoPanel(){
-    let rightPanel = document.createElement("div")
-    rightPanel.id = "right_panel"
-    rightPanel.className = "right"
-
-    tab.append(rightPanel)
-}
-
-function generatePlayerInfoPanel(){
-    let rightPanel = document.getElementById("right_panel")
-    let playerPanel = document.createElement("div")
-    playerPanel.id = "player_panel"
-    playerPanel.className = "management"
-    playerPanel.innerHTML = displayInfo(player, ['name','resources'])
-
-    rightPanel.append(playerPanel)
-}
-
-function generateMapInfoPanel(){
-    let rightPanel = document.getElementById("right_panel")
-    let mapPanel = document.createElement("div")
-    mapPanel.id = "map_panel"
-    mapPanel.className = "management"
-    mapPanel.innerHTML = "Map"
-
-    rightPanel.append(mapPanel)
-}
-
-//a whole function, really?
-function setNrb_level(nbr){
-    nbr_levels = nbr
-}
-
-function fillMapInfoPanel(map){
-    let mapPanel = document.getElementById("map_panel")
-    mapPanel.innerHTML = JSON.stringify(map)
-    setNrb_level(map.levels)
-}
-
-//test function
-function addUnit(unit){
-    if(player_units.length >= 4){
-        alert("too many units") 
-        return
-    }
-    let exits = player_units.find((e) => e.uuid == unit.uuid)
-    if(exits)
-        return
-    player_units.push(unit)
-    
-    let playerPanel = document.getElementById("player_panel")
-    let img = document.createElement("img")
-    img.src = "images/"+unit.image
-    img.width = 100
-    img.height = 150
-    playerPanel.appendChild(img)
-}
-
-
-function generateManagementPanel(){
-    tab.innerHTML = ""
-    displayMapsOnPanel()
-    generateRightInfoPanel()
-    generatePlayerInfoPanel()
-    generateMapInfoPanel()
-}
-
-//Unit panel ---------------------------------------------------
-function generateUnitPanel(){
-    generateUnitLeftPanel()
-    generateUnitRightPanel()
-}
-function generateUnitLeftPanel(){
-    tab.innerHTML = ""
-    let unit_info_panel = document.createElement("div")
-    unit_info_panel.id = "unit_info_panel"
-    unit_info_panel.className = "unit_right"
-    unit_info_panel.innerHTML = ""
-    let unit_div = document.createElement("div")
-    unit_div.id = "unit_div"
-    unit_div.className = "unit_left"
-    unit_div.innerHTML = ""
-
-    let unitButtons = Object.keys(units).map((unit_name) => {
-        let div = document.createElement("div")
-        let span = document.createElement("span")
-        span.innerHTML = displayInfo(units[unit_name], Object.keys(units[unit_name]).slice(0,-3))
-        span.style.display ="inline-block"
-        span.style.width = 300
-        span.style.border = "solid"
-        span.style.wordWrap = "break-word"
-        let img = document.createElement("img")
-        img.src = "images/" + units[unit_name].image
-        img.width = 100
-        img.height = 150
-        img.addEventListener("click", () =>{
-            showUnitInventory(unit_name)
-        })
-        div.appendChild(img)
-        div.appendChild(span)
-        return div
-    })
-    unitButtons.forEach((e) => unit_div.appendChild(e))
-
-    tab.appendChild(unit_div)
-    tab.appendChild(unit_info_panel)
-}
-
-function generateUnitRightPanel(){
-    let panel = document.getElementById("unit_info_panel") 
-    let unit_inventory = document.createElement("div")
-    unit_inventory.id = "unit_inventory"
-    unit_inventory.className = "unit_inventory"
-    unit_inventory.style.backgroundImage = "url('images/bg/inventory.png')"
-    unit_inventory.style.backgroundSize = "contain"
-    unit_inventory.style.backgroundRepeat = "no-repeat"
-    let player_inventory = document.createElement("div")
-    player_inventory.id = "player_inventory"
-    player_inventory.className = "player_inventory"
-
-    panel.appendChild(player_inventory)
-    panel.appendChild(unit_inventory)
-
-    showPlayerInventory()
-}
-
-function showPlayerInventory(){
-    let panel = document.getElementById("player_inventory")
-    let inventory = player.inventory
-    for(let item of inventory){
-        let div = document.createElement("div")
-        let img = document.createElement("img")
-        img.src = "images/" + item.image
-        img.width = 75
-        img.heigh = 150
-        let span = document.createElement('span')
-        span.innerHTML = item.name
-
-        div.appendChild(img)
-        div.appendChild(span)
-        panel.appendChild(div)
-    }
-}
-
-function showUnitInventory(unit){
-    let panel = document.getElementById("unit_inventory")
-    panel.style.wordWrap = "break-word"
-    panel.innerHTML = JSON.stringify(units[unit])
-}
-
 //INIT ---------------------------------------------------
 function initGame(){
     setOpponent()
@@ -689,27 +899,33 @@ function initGame(){
 
 function generateParentInterface(){
     container.innerHTML = ""
+    tab.innerHTML = ""
     let player_panel = document.createElement("button")
     player_panel.innerHTML = "Maps"
     player_panel.addEventListener("click", () => generateManagementPanel())
+    player_panel.className = "tab_button"
     
     let unit_panel = document.createElement("button")
     unit_panel.innerHTML = "Units"
     unit_panel.addEventListener("click", () => generateUnitPanel())
+    unit_panel.className = "tab_button"
 
     let quest_panel = document.createElement("button")
     quest_panel.innerHTML = "Quests"
     quest_panel.addEventListener("click", () => generateQuestPanel())
+    quest_panel.className = "tab_button"
 
     let town_panel = document.createElement("button")
     town_panel.innerHTML = "Town"
     town_panel.addEventListener("click", () => generateTownPanel())
+    town_panel.className = "tab_button"
 
     let board = document.createElement("button")
     board.id = "board_button"
     board.innerHTML = "Board"
-    board.addEventListener("click", () => generateBoard(currentMap.name))
+    board.addEventListener("click", () => generateBoard(currentMap))
     board.disabled = true
+    board.className = "tab_button"
 
     container.appendChild(player_panel)
     container.appendChild(unit_panel)
@@ -718,13 +934,19 @@ function generateParentInterface(){
     container.appendChild(board)
     container.appendChild(tab)
 
+    //TEMP, MODIFY TO DISPLAY START PAGE YOU WANT
     generateManagementPanel()
 }
 
 function generateStartInterface(){
     generateUnit()
-    generateStructure()
+    generateUnit()
+    generateStructure("fort")
+    generateStructure("hut")
     generateMap()
+    generateItem("shield")
+    generateItem("boots")
+    generateItem("helm")
     generateParentInterface()
     //generateMenu() 
 }

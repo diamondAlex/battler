@@ -26,6 +26,10 @@ function playTurn(){
                 unit.hp = unit.hp - opp.damage
                 if(unit.hp <= 0){
                     dies(unit, 'bot')
+                    if(!checkForUnitAlive()){
+                        alert("You have been felled! Retreat back to your town")
+                        leaveMap()
+                    }
                 }
             }
         }
@@ -74,7 +78,7 @@ function runReward(){
                 reward[0](...(reward.slice(1)))
             }
         }
-        displayOnSidePanel(`You've been gifted a reward`)
+        displayOnSidePanel(`Dungeon Over, You've been gifted a reward`)
         currentMap.rewards = []
     }
 }
@@ -224,8 +228,7 @@ function updateHps(){
 }
 
 function runPostDungeon(){
-    for(let structure of structures){
-        console.log(structure)
+    for(let structure of unit_structures){
         if(structure.perks.length != 0){
             for(let perk of structure.perks){
                 console.log("RUNNING STRUCT ABILITY")

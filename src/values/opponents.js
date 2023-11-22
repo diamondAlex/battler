@@ -4,8 +4,8 @@
 let opponents_templates = {
     "orc":{
         "stats":{
-            "minHp": 2,
-            "hpPerLvl":[3,9], 
+            "minHp": 5,
+            "hpPerLvl":[5,15], 
             "damage":1,
             "armor":1
         },

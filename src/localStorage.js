@@ -7,7 +7,7 @@ function populatePlayer(){
     let player = {
         "name": "bob",
         "resources":{
-            "gold":0
+            "gold":1000
         },
         "inventory":[
         ]
