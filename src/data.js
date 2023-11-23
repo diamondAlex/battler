@@ -41,20 +41,52 @@ let opponent_units = []
 let positions = []
 
 //order id important as pipes might rely on items or units
-let items = getItem("items")
-let player = getItem("player")
-let units = getItem("units")
-let game_units = getItem("game_units")
-let maps = getItem("maps")
-let opponents = getItem("opponents")
-let quests = getItem("quests")
+let items = []
+let player
+let units = []
+let game_units = []
+let maps = []
+let opponents = []
+let quests = []
+let unit_structures = []
+let structures = []
 
-let unit_structures = getItem("unit_structures")
-let structures = getItem("structures")
-
-let nbr_levels = 0
-
+let spells
 //serialize
+function load_game(){
+    items = getItem("items")
+    player = getItem("player")
+    units = getItem("units")
+    game_units = getItem("game_units")
+    maps = getItem("maps")
+    opponents = getItem("opponents")
+    quests = getItem("quests")
+
+    unit_structures = getItem("unit_structures")
+    structures = getItem("structures")
+}
+
+function save(){
+    console.log("saving")
+    //temp
+    let onBoard = 0
+    if(onBoard){
+        //save board state 
+    }
+    else{
+        //ooff
+        localStorage.setItem("items",JSON.stringify(items))
+        localStorage.setItem("player",JSON.stringify(player))
+        localStorage.setItem("units",JSON.stringify(units))
+        localStorage.setItem("game_units",JSON.stringify(game_units))
+        localStorage.setItem("maps",JSON.stringify(maps))
+        localStorage.setItem("opponents",JSON.stringify(opponents))
+        localStorage.setItem("quests",JSON.stringify(quests))
+        localStorage.setItem("unit_structures",JSON.stringify(unit_structures))
+        localStorage.setItem("structures",JSON.stringify(structures))
+    }
+}
+
 function insert(type, value){
     let content = localStorage.getItem(type)
     let json
@@ -73,7 +105,6 @@ function remove(type, key){
     if(json[key]){
         delete json[key]
     }
-
     localStorage.setItem(type, JSON.stringify(json))
 }
 
@@ -117,7 +148,6 @@ function getOpponent(){
     let opponentTypes = currentMap.spawn
     let type = selectRandom(opponentTypes)
     let opp = generateOpponent(type, currentMap.level)
-    pipes['opponent_units'].forEach((e) => e(opp))
     return opp
 }
 
@@ -128,9 +158,9 @@ function initData(){
     generateUnit()
 }
 
-function generatePlayer(){
-    let player ={
-        "name": "bob",
+function generatePlayer(name){
+    player ={
+        "name": name,
         "resources":{
             "gold":0
         },
@@ -141,6 +171,7 @@ function generatePlayer(){
 
 let item_uuid = 0
 function generateItem(type,level){
+    console.log("GENERATING ITEM")
     if(type == null){
         type = selectRandom(Object.keys(items_templates))    
     }
@@ -160,6 +191,7 @@ function generateItem(type,level){
             uuid:item_uuid
         }
     items.push(item)
+    console.log("ADDING ITEM")
     player.inventory.push(item)
     item_uuid++
 }
@@ -178,9 +210,9 @@ function roll(rangeArr, amt=1){
 const lvlXpRatio = 1.5
 const givenXpRatio = 1.3
 function getStatus(lvl){ 
-    if(lvl < 15) return "low"
-    else if(lvl < 50) return "mid"
-    else if(lvl < 90) return "high"
+    if(lvl < 5) return "low"
+    else if(lvl < 10) return "mid"
+    else if(lvl < 20) return "high"
     else return "top"
 }
 
@@ -199,6 +231,8 @@ function generateOpponent(type,level){
     let hp = template.stats.minHp + roll(template.stats.hpPerLvl,level)
     let status = getStatus(level)
     level = roll([level <= 1 ? 1: level-1, level+3],1)
+    let images = opponents_img_names.filter((e) => e.includes(status))
+    images = images.filter((e) => e.includes(type))
     let opponent = {
             type:type,
             name: selectRandom(template.name[status]) + ", " 
@@ -209,8 +243,9 @@ function generateOpponent(type,level){
             level:level,
             exp: Math.round(10 * Math.pow(level, lvlXpRatio)),
             xpPerLvl:Math.round(10 * Math.pow(level, lvlXpRatio)),
-            image: selectRandom(template.images[status]),
+            image: selectRandom(images),
             givenXp: Math.round(1 * Math.pow(level, givenXpRatio)),
+            resources:{gold:10*level},
             inventory:[],
             spells:[]
         }
@@ -235,11 +270,12 @@ function generateStructure(type = "fort",level=3){
     structures.push(structure)
 }
 
-function generateUnit(type="legio_nigra",level=1, name){
+function generateUnit(type="legio_nigra",level=1, name, image){
     let template = units_templates[type]
-    if(name == null) name = selectRandom(list_of_names.filter((e) => e[1] == 'Male'))[0]
-    let hp = template.stats.minHp + roll(template.stats.hpPerLvl,level)
     let status = getStatus(level)
+    if(name == null) name = selectRandom(list_of_names.filter((e) => e[1] == 'Male'))[0]
+    if(image == null) image = selectRandom(template.images[status])
+    let hp = template.stats.minHp + roll(template.stats.hpPerLvl,level)
 
     let unit = {
         name:name,
@@ -252,10 +288,10 @@ function generateUnit(type="legio_nigra",level=1, name){
         level:level,
         exp: 0,
         xpPerLvl:10 * Math.pow(level, lvlXpRatio),
-        image: selectRandom(template.images[status]),
+        image: image,
         givenXp: 10 * Math.pow(level, givenXpRatio),
         inventory:{},
-        spells:[],
+        spells:["heal","thunder"],
         uuid:uuid
     }
     uuid++
@@ -268,6 +304,7 @@ function selectRandomKey(obj){
     return [obj[select],select]
 }
 
+//todo change rewards from an [] to an [[]] so you can add multiple rewards, then deconstruct
 function generateMap(type,rewards, level, levels){
     let map_type;
     if(type == null){
@@ -282,20 +319,23 @@ function generateMap(type,rewards, level, levels){
     }
     if(level == null){
         //temporary
-        level = 2
+        level = 1
     }
     if(levels == null){
-        levels = 8
+        levels = 3
     }
     let map = {
             "levels":levels,
             "level":level,
-            "name":map_type.name,
+            "name":selectRandom(map_type.name) + " " + selectRandom(map_type.qualifier),
             "spawn":[
                 type
             ],
             "image":"images/maps/" + maps_img_names.pop(),
-            "rewards":[rewards, [() => player.resources.gold += 10*level]]
+            "rewards":[rewards, [() => {
+                console.log("SHOULD REWARD GOLD")
+                player.resources.gold += 10*level
+            }]]
         }
     maps.push(map)
 }
@@ -317,44 +357,49 @@ function getRandomUnitName(){
 }
 
 function getRandomStructure(){
-    let types = selectRandom(structures_templates)
+    let types = Object.keys(structures_templates)
     return selectRandom(types)
 }
+getRandomStructure()
 
-function generateQuest(quest, args, description = "",level=1){
+function generateQuest({quest, args, description = "",level=1} = {}){
+    console.log(level)
     let odds = roll([0,100],1)
     if(quest == null){
-        if(odds > 90){
+        if(odds > 80){
             let name = getRandomUnitName()
-            reward = [generateUnit, getRandomUnitType(), roll([1,level],1), name] 
+            reward = [generateUnit, getRandomUnitType(), roll([level,level+3],1), name] 
             //todo, review the way to pick number of levels
-            args = [getRandomMapType(), reward, roll([1,level],1), roll([2,level])]
+            args = [getRandomMapType(), reward, roll([level,10],1), roll([2,4+level])]
             description = "Rescue " + name
             quest = generateMap
         }
+        //else if(odds > 50){
+            ////todo, review the way to pick number of levels
+            //args = [getRandomMapType(), [], roll([level,10],1), roll([2,4+level])]
+            //description = "Explore new dungeon"
+            //quest = generateMap
+        //}
         else if(odds > 70){
             //todo, review the way to pick number of levels
-            args = [getRandomMapType(), [], roll([1,level],1), roll([2,level])]
-            description = "Explore new dungeon"
-            quest = generateMap
-        }
-        else if(odds > 50){
-            //todo, review the way to pick number of levels
             reward = [generateStructure, getRandomStructure(), roll([3,level],1)] 
-            args = [getRandomMapType(), reward, roll([1,level],1), roll([2,level])]
-            description = "find a new blueprint"
+            args = [getRandomMapType(), reward, roll([level,10],1), roll([2,4+level])]
+            description = "find a new structure blueprint"
             quest = generateMap
         }
-        else if(odds > 30){
+        else{
             reward = [generateItem] 
-            args = [getRandomMapType(), reward, roll([1,level],1), roll([2,level])]
+            args = [getRandomMapType(), reward, roll([level,10],1), roll([2,4+level])]
             description = "Locate a new artifact"
             quest = generateMap
         }
     }
-    return [() => {
+    let built_quest =  [() => {
         quest(...args)
     }, description]
+    console.log(args)
+    console.log(built_quest)
+    return built_quest
 }
 
 //add a bunch of resource types, and make them rewards
@@ -372,3 +417,26 @@ function addStructure(structure){
         player.resources.gold -= structure.cost["gold"]
     }
 }
+
+
+function generateSpell(){
+    spells = [
+        {
+            name:"heal",
+            action: () => { console.log("casted heal") },
+            animation: "animation_heal",
+            target:"units",
+            sound: () => {console.log("no sound effect")},
+        },{
+            name:"thunder",
+            action: () => { console.log("casted thunder") },
+            animation: "animation_thunder",
+            target:"opponents",
+            sound: () => {
+                (new Audio("sounds/thunder.wav")).play()
+            },
+        }
+    ]
+}
+
+generateSpell()

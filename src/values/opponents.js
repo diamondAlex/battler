@@ -1,11 +1,38 @@
-//should have a unit type, then the necessary info to generate
-//the unit depending on level.
-// stats are multipliers (so scaling per lvl)
+// opp ideas : Undead/necro, vampire?, manbearpig
+// having regular class as opponents? Like having factions and shit
 let opponents_templates = {
+    "demon":{
+        "stats":{
+            "minHp": 5,
+            "hpPerLvl":[5,12], 
+            "damage":1,
+            "armor":1
+        },
+        "name":{
+            "low":["Grimsnarl", "Maledrax", "Slinker", "Gloomfiend", "Shadowclaw"],
+            "mid":["Zarvox", "Neltharion", "Lysander", "Morgorath", "Sylvanius"],
+            "high":[, "Asmodeus", "Mephistopheles",  "Belial"],
+            "top":["Beelzebub","Lucifer"]
+        },
+        "qualifier":{
+            "low":["Imp", "Fiend", "Hellion"],
+            "mid":["Hellspawn","Maleficious", "Devilkin"],
+            "high":["Diabolo", "Prime Evil", "Incubus"],
+            "top":["Lord of The Underground", "Prince of Madness"]
+        },
+        "spells":{
+            "low":[],
+            "mid":[],
+            "high":[],
+            "top":[]
+        },
+        "images":{
+        }
+    },
     "orc":{
         "stats":{
             "minHp": 5,
-            "hpPerLvl":[5,15], 
+            "hpPerLvl":[5,12], 
             "damage":1,
             "armor":1
         },

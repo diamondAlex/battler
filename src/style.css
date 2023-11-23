@@ -1,6 +1,14 @@
 body{
     background-color:black;    
+    font-family: 'Amiri', serif;
+    /*font-size:125%*/
 }
+select{
+    font-family: 'Amiri', serif;
+}
+textarea{
+    font-family: 'Amiri', serif;
+} 
 img{
     border-radius:2px;
 }
@@ -19,6 +27,7 @@ img{
     height:90%;
 }
 .menu{
+    color:white;
     font-size:250%;
     width:100%;
     height:80%;
@@ -71,7 +80,6 @@ img{
 }
 .board_button{
     background:rgba(158, 156, 152,0.95);
-    font-family: "Times New Roman", Times, serif;
     font-size:200%;
     border:solid;
     border-radius:5px;
@@ -83,7 +91,8 @@ img{
     overflow-wrap: break-word;
     margin-bottom:3em;
     background:rgba(158, 156, 152,0.95);
-    font-size:125%
+    font-size:125%;
+    padding:5px;
 }
 .slotimage{
     width:100%;
@@ -131,6 +140,7 @@ img{
     height:49%;
     padding:5%;
     border-bottom:solid;
+    font-size:150%;
 }
 .unit_info_div{
     display:flex;
@@ -138,9 +148,13 @@ img{
     padding:3%;
 }
 .unit_info_img{
+    border-style:ridge;
+    border-color: #6b4c6b;
+    border-width: 8px;
+    border-radius: 6px;
     margin-top:2%;
-    width:125;
-    height:210;
+    width:150;
+    height:225;
 }
 .town_right{
     background:rgba(158, 156, 152,0.95);
@@ -194,8 +208,11 @@ img{
 .management_bot{
     height:49%;
     padding:5%;
+    font-size:150%
 }
 .unit_inventory{
+    font-size: 150%;
+    text-align: center;
     float:left;
     flex:2;
     padding:1%;
@@ -237,19 +254,37 @@ img{
     background:rgba(158, 156, 152,0.8);
     float:left;
 }
-.maps_img{
-    width:40%;
-    heigh:30%;
-    margin:15px;
+.bg_panel{
+    background:rgba(158, 156, 152,0.5);
 }
-.maps_overlay{
-    width:10%;
-    height:10%;
-    margin: 5%;
-    font-size:200%;
+.map_panel{
+    background:rgba(158, 156, 152,0.5);
+}
+.maps_div{
+    position:relative;
+    width:100%;
+    height:30%;
+}
+.maps_img{
     position:absolute;
+    width:50%;
+    height:90%;
+    margin:10px;
+    z-index:1
+}
+/*need to center the text*/
+.maps_overlay{
+    background:rgba(188, 186, 182,0.8);
+    position:absolute;
+    width:max-content;
+    top:35%;
+    height:25%;
+    margin: 5%;
+    padding: 3;
+    font-size:200%;
+    color:black;
     z-index:2;
-    color:white;
+    border-radius:5px;
 }
 .info_slot{
     float:left;
@@ -278,9 +313,6 @@ img{
     font-size:150%;
     width:45%;
 }
-.map_panel{
-    background:rgba(158, 156, 152,0.5);
-}
 .inventory_image{
     border:solid;
     border-radius:5px;
@@ -308,4 +340,191 @@ img{
     background:rgba(158, 156, 152,0.3);
     overflow-y: hidden;
     overflow-x:hidden;
+}
+.button_style{
+     background:rgba(158, 156, 152,0.5);   
+     font-size: 125%;
+     border: solid;
+     border-radius: 4px;
+     margin:1%;
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background:rgba(105, 105, 105,0.7);   
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background:rgba(90, 90, 90,0.9);   
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background:rgba(158, 156, 152,0.8);   
+}
+.unit_right_man{
+    width:100;
+    height:150;
+}
+
+/*ANIMATION*/
+.animation_heal{
+  animation-name: heal;
+  animation-duration: 400ms;
+}
+.animation_thunder{
+  animation-name: thunder;
+  animation-duration: 1s;
+}
+
+.animation_attack_opp{
+  animation-name: attack_opp;
+  animation-duration: 1s;
+}
+@keyframes attack_opp {
+    0%{
+        position: absolute;
+        bottom:0%;
+        width: 100%;
+        height: 100%;
+    }
+    50% {
+        position: absolute;
+        top:20%;
+        right:10%;
+        width: 105%;
+        height: 105%;
+    }
+    100%{
+        position: absolute;
+        bottom:0%;
+        width: 100%;
+        height: 100%;
+    }
+}
+.animation_attack{
+  animation-name: attack;
+  animation-duration: 1s;
+}
+@keyframes attack {
+    0%{
+        position: absolute;
+        bottom:0%;
+        width: 100%;
+        height: 100%;
+    }
+    50% {
+        position: absolute;
+        bottom:20%;
+        right:10%;
+        width: 105%;
+        height: 105%;
+    }
+    100%{
+        position: absolute;
+        bottom:0%;
+        width: 100%;
+        height: 100%;
+    }
+}
+@keyframes heal {
+  from {background-color: blue;}
+  to {background-color: white;}
+}
+@keyframes thunder {
+   0%{
+      background-color: white;
+  }
+  35% {
+      background-image: url("images/bg/thunder_to.png");
+      background-size: cover;
+  }
+  70% {
+      background-color: white;
+  }
+}
+
+/*CREATION*/
+.unit_creation_input{
+    margin:2%;
+    font-size: 150%;
+    padding: 2%;
+    height: 20%;
+    display: block;
+}
+.unit_creation_input_select{
+    font-size: 100%;
+}
+.unit_creation_text{
+    border:solid;
+    float:left;
+    width:60%;
+    height:80%;
+    margin:4%;
+    padding:10;
+}
+.unit_creation_img{
+    float:left;
+    width:20%;
+    height:50%;
+    margin:4%;
+}
+.creation_img_panel{
+    background:rgba(158, 156, 152,0.95);
+    display :inline-block;
+    border-top-left-radius: 10px ;
+    border-bottom-left-radius: 10px;
+    overflow-y:scroll;
+    height:100%;
+    width:10%;
+    margin-left:5%
+}
+.creation_img_div{
+    margin : "5%";
+}
+.creation_img{
+    border: solid;
+    border-radius: 4px;
+    margin:6px;
+    width: 110; 
+    height: 165; 
+}
+.creation_img_right{
+    border: solid;
+    border-radius: 4px;
+    width: 200; 
+    height: 300; 
+}
+.creation_text_area{
+    resize: none;
+    outline: none;
+    text-wrap:off;
+    overflow:hidden;
+    font-size:100%;
+    height: 40%;
+    border: none;
+    text-align: left;
+    border-bottom: solid;
+    background: inherit;
+}
+.creation_right_panel{
+    background:rgba(158, 156, 152,0.95);
+    border-top-right-radius: 10px ;
+    border-bottom-right-radius: 10px;
+    display :inline-block;
+    height:100%;
+    width:80%;
+}
+.creation_player_panel{
+    float:left;
+    border:solid;
+    width:60%;
+    height:80%;
+    margin:4%;
 }

@@ -5,8 +5,17 @@
 // stats are multipliers (so scaling per lvl)
 let maps_templates = {
     "orc":{
-        "name": "Orc Cave"
+        "name": ["Den", "Cave", "Grotto", "Tunnels","Pit","Labyrinth"],
+        "qualifier":["of Orcs", "of Greenskins", "of Goblins", "of The Skinner"]
+    },
+    "demon":{
+        "name": ["Portal", "Gateway", "Mines", "Depths"],
+        "qualifier":["of Hell", "of Nowhere","of Flames","of Evil"]
     },
 }
 
 
+    //"mbp":{
+        //"name": ["Forest", "Fields", "Hills", "Valley"],
+        //"qualifier":["of Darkness", "of Pain","of Suffering","of Shadows"]
+    //},

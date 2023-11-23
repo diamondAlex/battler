@@ -19,29 +19,167 @@ function generateMenu(){
 
     let options = [
         "play",
-        "new game",
         "load",
         "exit",
     ]
 
     for(let option of options){
         let p = document.createElement("p")
+        p.id = "menu_" + option
         p.innerHTML = option
-        p.addEventListener("click", () => {
-            generateInitialData()
-            generateParentInterface()
-        })
         p.className = "menu_option"
         menu.appendChild(p)
     }
 
     container.appendChild(menu)
+
+    let play = document.getElementById("menu_play")
+    play.addEventListener("click", () => {
+        generateCreationPage()
+    })
+    
+    let load = document.getElementById("menu_load")
+    load.addEventListener("click", () => {
+        load_game()
+        generateParentInterface()
+    })
 }
 
 function generateInitialData(){
     initData()
 }
 
+//CREATE---------------------------------------------------
+
+function generateCreationImgPanel(){
+    let panel = document.createElement("div")
+    panel.id = "creation_img_panel"
+    panel.className = "creation_img_panel"
+    for(let name of units_img_names){
+        let div = document.createElement("div")
+        div.className = "creation_img_div"
+        let img = document.createElement("img")
+        img.src = "images/units/" + name
+        img.className="creation_img"
+        img.id = name
+        img.addEventListener("click", (e) =>{
+            let div = document.getElementById("unit_creation_img") 
+            div.innerHTML =""
+            let img = document.createElement("img")
+            img.src = "images/units/" + name
+            img.id = name
+            img.className = "creation_img_right"
+            div.appendChild(img)
+        })
+        div.appendChild(img)
+        panel.appendChild(div)
+    }
+    tab.appendChild(panel)
+}
+function generateCreationRightPanel(){
+    let panel = document.createElement("div")
+    panel.id = "creation_right_panel"
+    panel.className = "creation_right_panel"
+    let unit_img = document.createElement("div")
+    unit_img.id = "unit_creation_img"
+    unit_img.className = "unit_creation_img"
+
+    let unit_text = document.createElement("div")
+    unit_text.id = "unit_creation_text"
+    unit_text.className = "unit_creation_text"
+
+    panel.appendChild(unit_img)
+    panel.appendChild(unit_text)
+    tab.appendChild(panel)
+
+    generateCreationInfo()
+}
+
+function generateCreationInfo(){
+    let div = document.getElementById("unit_creation_text")
+    let player_name = document.createElement("textarea")
+    player_name.className = "creation_text_area"
+    let span = document.createElement("div") 
+    span.className = "unit_creation_input"
+    span.innerHTML = "Player Name : "
+    span.appendChild(player_name)
+    div.appendChild(span)
+    
+    let unit_name = document.createElement("textarea")
+    unit_name.className = "creation_text_area"
+    span = document.createElement("div") 
+    span.className = "unit_creation_input"
+    span.innerHTML = "Unit name : "
+    span.appendChild(unit_name)
+    div.appendChild(span)
+
+    let unit_type = document.createElement("select")
+    unit_type.className="unit_creation_input_select creation_text_area"
+    for(let type of Object.keys(units_templates)){
+        let option = document.createElement("option")
+        option.className="unit_creation_input_select"
+        option.value = type
+        option.innerHTML = type.split("_").map((e)=> capitalizeFirstLetter(e)).join(" ")
+        unit_type.appendChild(option)
+    }
+
+    span = document.createElement("div") 
+    span.className = "unit_creation_input"
+    span.innerHTML = "Unit type : "
+    span.appendChild(unit_type)
+    div.appendChild(span)
+
+    let start = (e) => {
+        let image
+        try{
+            image = "units/" + document.getElementById("unit_creation_img").children[0].id
+        }
+        catch(err){
+            alert("plz select an image")
+            return
+        }
+        if(player_name.value == ""){
+            alert("need a player name")
+            return
+        }
+        if(unit_name.value == ""){
+            alert("need a unit name")
+            return
+        }
+        if(unit_type.value == ""){
+            alert("need a unit type")
+            return
+        }
+        generatePlayer(player_name.value)
+        generateUnit(unit_type.value,1,unit_name.value,image)
+        generateMap()
+        generateParentInterface()
+    }
+
+    let button = document.createElement("button")
+    button.className = "button_style"
+    button.innerHTML = "start!"
+    button.addEventListener('click', start)
+    div.appendChild(button)
+    let controller = new AbortController()
+    let signal = controller.signal
+    window.addEventListener("keydown", (e) => {
+        if((e.code == "Enter" || e.code == "NumpadEnter") && player_name.value != "" && unit_name.value != "" && unit_type.value != ""){
+            start(e) 
+            controller.abort()
+        }
+    },{signal:signal})
+}
+
+function generateCreationPage(){
+    container.innerHTML = ""
+    tab.innerHTML = ""
+    tab.style = ""
+    tab.style.background = "black"
+    container.appendChild(tab)
+    generateCreationImgPanel()
+    generateCreationRightPanel()
+}
 //BOARD---------------------------------------------------
 let addSlots = () => {
     let topside = document.getElementById("board_topside")
@@ -164,8 +302,9 @@ function setOpponent(){
         }
         let overlay = document.getElementById("top_overlay"+i)
 
-        unitDiv.style.backgroundImage = `url('images/${opponent.image}')`
+        unitDiv.style.backgroundImage = `url('${opponent.image}')`
         unitDiv.style.backgroundSize = "cover"
+        unitDiv.id = "opponent_"+i
 
         overlay.innerHTML = opponent.hp + "/" + opponent.maxhp
         opponent_units.push(opponent)
@@ -220,11 +359,6 @@ function setPlayerPanel(){
     }
 }
 
-function enableTabButton(){
-    let button = document.getElementById("board_button")
-    button.disabled = false
-}
-
 function displayOnSidePanel(text){
     let panel = document.getElementById("panel_topside")
     panel.innerHTML = text
@@ -234,15 +368,6 @@ function setBoardBg(){
     let bg = currentMap.image
     tab.style.backgroundImage = `url('${bg}')`
     tab.style.backgroundSize = 'contain'
-    
-    //let div = document.getElementById("board_topside")
-    //div.style.backgroundColor = "#545252"
-    //div = document.getElementById("board_botside")
-    //div.style.backgroundColor = "#545252"
-    //div = document.getElementById("panel_botside")
-    //div.style.backgroundColor = "#545252"
-    //div = document.getElementById("panel_topside")
-    //div.style.backgroundColor = "#545252"
 }
 
 function generateBoard(map){
@@ -250,7 +375,6 @@ function generateBoard(map){
     tab.style = ""
     if(map != null)
         currentMap = map
-    enableTabButton()
     addBoard()
     addSides()
     addSlots()
@@ -483,27 +607,29 @@ function displayMapsOnPanel(){
         tab.append(leftPanel)
     }
     leftPanel.id = "map_panel"
-    leftPanel.className = "left map_panel"
+    leftPanel.className = "left bg_panel"
     leftPanel.innerHTML = ""
 
     let unit_button = document.createElement("button")
-    unit_button.innerHTML = "units >>"
+    unit_button.className = "button_style"
+    unit_button.innerHTML = "Select Units"
     unit_button.addEventListener("click",displayUnitsOnPanel)
     leftPanel.appendChild(unit_button)
 
     for(let map of maps){
         let button = document.createElement("div")
+        button.className = "maps_div"
         button.addEventListener("click", () =>{
-            displayUnitsOnPanel(map)
+            currentMap = map
             fillMapInfoPanel(map)
         })
         let image = document.createElement("img")
-        image.id = map
+        image.id = map.name.replaceAll(" ","_")
         image.src= map.image
         image.className = "maps_img"
         let overlay = document.createElement("div")
         overlay.className = "maps_overlay"
-        overlay.id = "map_overlay_" + map.name
+        overlay.id = "map_overlay_" + map.name.replaceAll(" ","_")
         overlay.innerHTML = map.name
         button.appendChild(overlay)
         button.appendChild(image)
@@ -512,35 +638,39 @@ function displayMapsOnPanel(){
     }
 }
 
-function displayUnitsOnPanel(map){
+function displayUnitsOnPanel(){
     let leftPanel = document.getElementById("map_panel")
     if(!leftPanel) leftPanel = document.getElementById("unit_panel")
     leftPanel.innerHTML = ""
     leftPanel.id = "unit_panel"
-    leftPanel.className = "left map_panel"
+    leftPanel.className = "left bg_panel"
 
     let map_button = document.createElement("button")
+    map_button.className = "button_style"
     map_button.innerHTML = "maps <<"
     map_button.addEventListener("click", () =>{
         displayMapsOnPanel()
-        showPlayerInfoPanel()
     })
     leftPanel.appendChild(map_button)
 
     let startButton = document.createElement("button")
+    startButton.className = "button_style"
     startButton.innerHTML = "start"
     startButton.addEventListener("click", () =>{
-        if(player_units.length > 0)
-            generateBoard(map)
+        if(player_units.length > 0 && currentMap != ""){
+            generateBoard(currentMap)
+            toggleButtons(["maps","units","quests","town","board"])
+        }
     })
     leftPanel.appendChild(startButton)
     let skipButton = document.createElement("button")
+    skipButton.className = "button_style"
     skipButton.innerHTML = "skip"
     skipButton.addEventListener("click", () =>{
         console.log("click!")
-        if(player.resources.gold > 100){
+        if(player.resources.gold >= 5){
             console.log(player)
-            player.resources.gold -= 100
+            player.resources.gold -= 5
             runPostDungeon()
             displayUnitsOnPanel()
         }
@@ -562,7 +692,11 @@ function displayUnitsOnPanel(map){
         img.src = "images/" + unit.image
         img.className ="unit_info_img"
         img.addEventListener("click", () =>{
-            addUnit(unit)
+            if(unit.hp > 0){
+                addUnit(unit)
+            }else{
+                alert("unit is too low hp")
+            }
         })
         div.appendChild(img)
         div.appendChild(span)
@@ -575,22 +709,18 @@ function displayUnitsOnPanel(map){
 function generateRightInfoPanel(){
     let rightPanel = document.createElement("div")
     rightPanel.id = "right_panel"
-    rightPanel.className = "right map_panel"
+    rightPanel.className = "right bg_panel"
     tab.append(rightPanel)
 }
 
-function showPlayerInfoPanel(){
-    let playerPanel = document.getElementById("player_panel")
-    playerPanel.innerHTML = displayInfo(player, ['name','resources'])
-}
 function generatePlayerInfoPanel(){
     let rightPanel = document.getElementById("right_panel")
     let playerPanel = document.createElement("div")
     playerPanel.id = "player_panel"
-    playerPanel.className = "management_top map_panel"
+    playerPanel.className = "management_top bg_panel"
+    playerPanel.innerHTML = `<div style='text-decoration:underline;'>Selected Units<div>`
 
     rightPanel.append(playerPanel)
-    showPlayerInfoPanel()
 }
 
 function generateMapInfoPanel(){
@@ -598,7 +728,7 @@ function generateMapInfoPanel(){
     let mapPanel = document.createElement("div")
     mapPanel.id = "map_info_panel"
     mapPanel.className = "management_bot"
-    mapPanel.innerHTML = "Map"
+    mapPanel.innerHTML = "<div style='text-decoration:underline'>Map<div>"
 
     rightPanel.append(mapPanel)
 }
@@ -610,7 +740,8 @@ function setNrb_level(nbr){
 
 function fillMapInfoPanel(map){
     let mapPanel = document.getElementById("map_info_panel")
-    mapPanel.innerHTML = JSON.stringify(map)
+    mapPanel.innerHTML = "<div style='text-decoration:underline'>Map<div>"
+    mapPanel.innerHTML +=  displayInfo(map,["name","level","levels","spawn"])
     setNrb_level(map.levels)
 }
 
@@ -631,10 +762,12 @@ function addUnit(unit){
 function displayUnitsOnRightPanel(){
     let playerPanel = document.getElementById("player_panel")
     playerPanel.innerHTML = ""
+    playerPanel.innerHTML = `<div style='text-decoration:underline;'>Selected Units<div>`
     for(let unit of player_units){
         let img = document.createElement("img")
         img.id = "unit_right_man_panel_" + unit.uuid
         img.src = "images/"+unit.image
+        img.className ="unit_info_img unit_right_man"
         img.width = 100
         img.height = 150
         img.addEventListener("click", (event) => {
@@ -670,11 +803,11 @@ function generateUnitPanel(){
 function generateUnitLeftPanel(){
     let unit_info_panel = document.createElement("div")
     unit_info_panel.id = "unit_info_panel"
-    unit_info_panel.className = "unit_right map_panel"
+    unit_info_panel.className = "unit_right bg_panel"
     unit_info_panel.innerHTML = ""
     let unit_div = document.createElement("div")
     unit_div.id = "unit_div"
-    unit_div.className = "unit_left map_panel"
+    unit_div.className = "unit_left bg_panel"
     unit_div.innerHTML = ""
 
     let unitButtons = units.map((unit) => {
@@ -874,17 +1007,28 @@ function showUnitInventory(unit){
 }
 
 // UTILS
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
 
+function toggleButtons(names){
+    for(let name of names){
+        let button = document.getElementById(name+"_button")
+        button.disabled ? button.disabled = false: button.disabled = true;
+    }
+}
+
+//todo modify to print array proper
 function displayInfo(json, keys){
     let str = ''
     if(keys == null){
         for(let key of Object.keys(json)){
-            str = str + key + " - " + JSON.stringify(json[key]) + "<br>" 
+            str = str + capitalizeFirstLetter(key) + "\t" + JSON.stringify(json[key]) + "<br>" 
         }
     }
     else{
         for(let key of keys){
-            str = str + key + " - " + JSON.stringify(json[key]) + "<br>" 
+            str = str + capitalizeFirstLetter(key) + "\t" + JSON.stringify(json[key]) + "<br>" 
         }
     }
     return str
@@ -901,21 +1045,25 @@ function generateParentInterface(){
     container.innerHTML = ""
     tab.innerHTML = ""
     let player_panel = document.createElement("button")
+    player_panel.id = "maps_button"
     player_panel.innerHTML = "Maps"
     player_panel.addEventListener("click", () => generateManagementPanel())
     player_panel.className = "tab_button"
     
     let unit_panel = document.createElement("button")
+    unit_panel.id = "units_button"
     unit_panel.innerHTML = "Units"
     unit_panel.addEventListener("click", () => generateUnitPanel())
     unit_panel.className = "tab_button"
 
     let quest_panel = document.createElement("button")
+    quest_panel.id = "quests_button"
     quest_panel.innerHTML = "Quests"
     quest_panel.addEventListener("click", () => generateQuestPanel())
     quest_panel.className = "tab_button"
 
     let town_panel = document.createElement("button")
+    town_panel.id = "town_button"
     town_panel.innerHTML = "Town"
     town_panel.addEventListener("click", () => generateTownPanel())
     town_panel.className = "tab_button"
@@ -934,21 +1082,19 @@ function generateParentInterface(){
     container.appendChild(board)
     container.appendChild(tab)
 
-    //TEMP, MODIFY TO DISPLAY START PAGE YOU WANT
     generateManagementPanel()
 }
 
 function generateStartInterface(){
-    generateUnit()
-    generateUnit()
-    generateStructure("fort")
-    generateStructure("hut")
-    generateMap()
-    generateItem("shield")
-    generateItem("boots")
-    generateItem("helm")
-    generateParentInterface()
-    //generateMenu() 
+    generateMenu() 
 }
+
+window.addEventListener("keydown", (e) =>{
+    if(e.code == "KeyS" && e.ctrlKey){
+        e.preventDefault()
+        save()
+        alert("saved")
+    }
+})
 
 generateStartInterface()

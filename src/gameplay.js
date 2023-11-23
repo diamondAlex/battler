@@ -1,7 +1,7 @@
 let turnEnded = 0
 let dungeonEnded = 0
 //the implementation lacks consistency, opp and player turns are built different
-function playTurn(){
+async function playTurn(){
     //player turn
     if(turnEnded == 0 && dungeonEnded ==0){
         for(let i = positions.length -1;i>=0;i--){
@@ -10,8 +10,12 @@ function playTurn(){
             let index = pickOpponent(opponent_units)
             if(index == -1) continue
             let opp = opponent_units[index]
+            //let div = document.getElementById("board_topside")
+            //div.classList.add("animation_div")
             if(!(unit.hp <= 0 || opp.hp <= 0)){
                 opp.hp = opp.hp - unit.damage
+                await attack(unit,"bot")
+                await castSpells(unit)
                 if(opp.hp <= 0){
                     dies(index, 'top')
                     setXp(opp.givenXp)
@@ -24,20 +28,16 @@ function playTurn(){
             let opp = opponent_units[i]
             if(!(unit.hp <= 0 || opp.hp <= 0)){
                 unit.hp = unit.hp - opp.damage
+                await attack(i,"top")
+                //await castSpells(unit)
                 if(unit.hp <= 0){
+                    unit.hp = 0
                     dies(unit, 'bot')
                     if(!checkForUnitAlive()){
                         alert("You have been felled! Retreat back to your town")
                         leaveMap()
                     }
                 }
-            }
-        }
-        for(let i = positions.length -1;i>=0;i--){
-            let unit = positions[i]
-            if(!unit) continue
-            if(unit.spells.length != 0){
-                spells[unit.spells]() 
             }
         }
         updateHps()
@@ -55,11 +55,66 @@ function playTurn(){
             }
 
         }
-        if(!checkForUnitAlive()){
-            alert("You have been felled! Retreat back to your town")
-            leaveMap()
+    }
+}
+
+async function attack(unit, side){
+    let targetDiv
+    let animation
+    console.log(unit)
+    console.log(side)
+    if(side == 'bot'){
+        targetDiv = document.getElementById("unit_" + unit.uuid)
+        animation = "animation_attack"
+    }
+    else{
+        targetDiv = document.getElementById("opponent_" + unit)
+        animation = "animation_attack_opp"
+    }
+    console.log(targetDiv)
+    if(targetDiv.classList.contains(animation)){
+        let new_div = targetDiv.cloneNode(true)
+        targetDiv.parentNode.replaceChild(new_div, targetDiv)
+    }
+    if(!targetDiv.classList.contains(animation)){
+        targetDiv.classList.add(animation)
+    }
+    (new Audio("sounds/sword.wav")).play()
+    await (new Promise((resolve) => {
+        setTimeout(() => {
+            resolve()
+        }, 1500)
+    }))
+}
+
+async function castSpells(unit){
+    if(unit.spells.length != 0){
+        for(let spell of unit.spells){
+            let spell_info = spells.find((e) => e.name == spell)
+            spell_info.action()
+            let targetDiv
+            spell_info.sound()
+            if(spell_info.target == "opponents"){
+                targetDiv = document.getElementById("board_topside")
+            }
+            else if(spell_info.target == "units"){
+                targetDiv = document.getElementById("board_botside")
+            }
+            if(targetDiv.classList.contains(spell_info.animation)){
+                let new_div = targetDiv.cloneNode(true)
+                targetDiv.parentNode.replaceChild(new_div, targetDiv)
+            }
+            if(!targetDiv.classList.contains(spell_info.animation)){
+                targetDiv.classList.add(spell_info.animation)
+            }
+            await (new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve()
+                }, 1500)
+            }))
         }
     }
+    
 }
 
 function nextLevel(){
@@ -74,8 +129,11 @@ function runReward(){
     console.log("RUN REWARD")
     if(currentMap.rewards.length != 0){
         for(let reward of currentMap.rewards){
+            console.log(reward)
             if(reward.length!=0){
-                reward[0](...(reward.slice(1)))
+                if(reward[0]){
+                    reward[0](...(reward.slice(1)))
+                }
             }
         }
         displayOnSidePanel(`Dungeon Over, You've been gifted a reward`)
@@ -86,16 +144,14 @@ function runReward(){
 function addQuest(){
     let odds = Math.floor(Math.random()* 100)
     if(odds >= 0){
-        //let args = ['orc',[generateUnit,"cleric",2,"Vesta"], 1, 2]
-        //let description = "A QUEST FOR "
-        //let newQuest = generateQuest(generateMap,args, description)
-        let newQuest = generateQuest()
+        let newQuest = generateQuest({level:currentMap.level})
         quests.push(newQuest)
+        displayOnSidePanel(`Dungeon Over, You've been given a new Quest!`)
     }
 }
 
 function betweenRound(){
-    let heal = roll([5,10],1)
+    let heal = roll([10,15],1)
     for(unit of positions){
         if(unit){
             if(unit.hp < unit.maxhp){
@@ -108,33 +164,33 @@ function betweenRound(){
 
 }
 
-let spells = {
-    "heal": (level) => {
-        let heal = roll([2,5],level)
-        if(positions.length != 0){
-            for(let unit of positions){
-                if(unit){
-                    unit.hp = unit.hp + heal
-                    if(unit.hp > unit.maxhp){
-                        unit.hp = unit.maxhp
-                    }
-                }
-            }
-        }
-        else{
-            for(let unit of units){
-                if(unit){
-                    unit.hp = unit.hp + heal
-                    console.log("healed for " + heal)
-                    if(unit.hp > unit.maxhp){
-                        unit.hp = unit.maxhp
-                    }
-                }
-            }
+//let spells = {
+    //"heal": (level) => {
+        //let heal = roll([5,10],level)
+        //if(positions.length != 0){
+            //for(let unit of positions){
+                //if(unit){
+                    //unit.hp = unit.hp + heal
+                    //if(unit.hp > unit.maxhp){
+                        //unit.hp = unit.maxhp
+                    //}
+                //}
+            //}
+        //}
+        //else{
+            //for(let unit of units){
+                //if(unit){
+                    //unit.hp = unit.hp + heal
+                    //console.log("healed for " + heal)
+                    //if(unit.hp > unit.maxhp){
+                        //unit.hp = unit.maxhp
+                    //}
+                //}
+            //}
             
-        }
-    }
-}
+        //}
+    //}
+//}
 
 function setXp(givenXp){
     for(let unit of positions){
@@ -155,9 +211,11 @@ function setXp(givenXp){
 
 function leaveMap(){
     dungeonEnded = 0
+    turnEnded = 0
     player_units = []
     opponent_units = []
     positions = []
+    toggleButtons(["board","maps","units","quests","town"])
     generateManagementPanel()
 }
 
@@ -199,9 +257,15 @@ function dies(unit, side){
     if(side == 'top'){
         let overlay = document.getElementById(side + "_overlay" +unit)
         overlay.classList.add("dead")
-        if(opponent_units[unit].inventory.length != 0){
+        let opp = opponent_units[unit]
+        if(opp.resources.length != 0){
+            for(let key of Object.keys(opp.resources)){
+                player.resources[key] += opp.resources[key]
+            }
+        }
+        if(opp.inventory.length != 0){
             console.log("adding item")
-            player.inventory.push(...opponent_units[unit].inventory)
+            player.inventory.push(...opp.inventory)
         }
     }
     else{
@@ -236,4 +300,5 @@ function runPostDungeon(){
             }
         }
     }
+    spells["heal"](1)
 }

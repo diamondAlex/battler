@@ -1,7 +1,7 @@
-generate manbearpig
+leaving should run postDungeon if the dungeon is not done
+death bugs the next dungeon.
+having multiple quests with the same name pops all of them (from the quest page)
 generate background images for dungeon, make them correspond with the smaller maps images
-disable the board button when no dungeons are up
-disable other buttons when on board
 serialization of game data for reload purposes
 make a build to run longer games on, in order to test things beyond the very beginning
 change the alerts() for dialog pop ups with their own style

@@ -1,7 +1,9 @@
 let maps_img_names = [
 'dungeon2.png',
-'new_map.png',
-'orc_1.png',
+'new_map_10.png',
+'new_map_11.png',
+'new_map_12.png',
+'new_map_13.png',
 'new_map_1.png',
 'new_map_2.png',
 'new_map_3.png',
@@ -11,7 +13,6 @@ let maps_img_names = [
 'new_map_7.png',
 'new_map_8.png',
 'new_map_9.png',
-'new_map_10.png',
-'new_map_11.png',
-'new_map_12.png',
+'new_map.png',
+'orc_1.png',
 ]

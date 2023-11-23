@@ -7,11 +7,11 @@
 let units_templates = {
     "legio_nigra":{
         "stats":{
-            "minHp": 25,
-            "hpPerLvl":[4,8], 
-            "damage":6,
+            "minHp": 30,
+            "hpPerLvl":[5,12], 
+            "damage":7,
             //should this be a range?
-            "dmgPerLvl":[1,2],
+            "dmgPerLvl":[2,3],
             "armor":3
         },
         //work in process, this is just some latin
