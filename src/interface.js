@@ -59,15 +59,14 @@ function generateCreationImgPanel(){
         let div = document.createElement("div")
         div.className = "creation_img_div"
         let img = document.createElement("img")
-        img.src = "images/units/" + name
+        img.src = name
         img.className="creation_img"
         img.id = name
         img.addEventListener("click", (e) =>{
             let div = document.getElementById("unit_creation_img") 
             div.innerHTML =""
             let img = document.createElement("img")
-            img.src = "images/units/" + name
-            img.id = name
+            img.src = name
             img.className = "creation_img_right"
             div.appendChild(img)
         })
@@ -113,9 +112,25 @@ function generateCreationInfo(){
     span.appendChild(unit_name)
     div.appendChild(span)
 
+    let unit_class = document.createElement("select")
+    unit_class.className="unit_creation_input_select creation_text_area"
+    for(let type of Object.keys(classes_templates)){
+        let option = document.createElement("option")
+        option.className="unit_creation_input_select"
+        option.value = type
+        option.innerHTML = type.split("_").map((e)=> capitalizeFirstLetter(e)).join(" ")
+        unit_class.appendChild(option)
+    }
+
+    span = document.createElement("div") 
+    span.className = "unit_creation_input"
+    span.innerHTML = "Unit class : "
+    span.appendChild(unit_class)
+    div.appendChild(span)
+
     let unit_type = document.createElement("select")
     unit_type.className="unit_creation_input_select creation_text_area"
-    for(let type of Object.keys(units_templates)){
+    for(let type of Object.keys(types_templates)){
         let option = document.createElement("option")
         option.className="unit_creation_input_select"
         option.value = type
@@ -132,7 +147,7 @@ function generateCreationInfo(){
     let start = (e) => {
         let image
         try{
-            image = "units/" + document.getElementById("unit_creation_img").children[0].id
+            image = document.getElementById("unit_creation_img").children[0].src
         }
         catch(err){
             alert("plz select an image")
@@ -146,12 +161,16 @@ function generateCreationInfo(){
             alert("need a unit name")
             return
         }
+        if(unit_class.value == ""){
+            alert("need a unit class")
+            return
+        }
         if(unit_type.value == ""){
             alert("need a unit type")
             return
         }
         generatePlayer(player_name.value)
-        generateUnit(unit_type.value,1,unit_name.value,image)
+        generateUnit({type:unit_type.value,unitClass:unit_class.value,level:1,name:unit_name.value,image:image})
         generateMap()
         generateParentInterface()
     }
@@ -164,7 +183,14 @@ function generateCreationInfo(){
     let controller = new AbortController()
     let signal = controller.signal
     window.addEventListener("keydown", (e) => {
-        if((e.code == "Enter" || e.code == "NumpadEnter") && player_name.value != "" && unit_name.value != "" && unit_type.value != ""){
+        if((e.code == "Enter" || e.code == "NumpadEnter") && unit_class.value != "" && player_name.value != "" && unit_name.value != "" && unit_type.value != ""){
+            try{
+                image = document.getElementById("unit_creation_img").children[0].src
+            }
+            catch(err){
+                alert("plz select an image")
+                return
+            }
             start(e) 
             controller.abort()
         }
@@ -185,13 +211,24 @@ let addSlots = () => {
     let topside = document.getElementById("board_topside")
     let botside = document.getElementById("board_botside")
     for(let i = 0; i<SLOT_MAX;i++){
+        //THIS IS BAD BECAUSE IT IS LATER REPLACED SO IT'S CONFUSING
         let slot = document.createElement("div")
         slot.className = "slot"
         slot.id = "top_slot" + i
         let overlay = document.createElement("div")
         overlay.className = "overlay"
         overlay.id = "top_overlay" + i
+
+        let animation_layer = document.createElement("div")
+        animation_layer.className = "overlay_animation"
+        animation_layer.id = "top_animation" + i
+        
+        let test = document.createElement("div")
+        test.id= "sup"
+
         slot.appendChild(overlay)
+        slot.appendChild(test)
+        slot.appendChild(animation_layer)
         topside.appendChild(slot)
     }
     for(let i = 0; i<SLOT_MAX;i++){
@@ -209,6 +246,20 @@ let addSlots = () => {
         }
     
     }
+}
+
+function disableBoardButtons(){
+    let buttons = document.querySelectorAll("button.board_button")
+    for(let button of buttons){
+        button.disabled = true
+    }
+}
+function enableBoardButtons(){
+    let buttons = document.querySelectorAll("button.board_button")
+    for(let button of buttons){
+        button.disabled = false
+    }
+    
 }
 
 let addBoard = () =>{
@@ -241,7 +292,7 @@ let addSides = () =>{
     topside = document.createElement("div")
     topside.id = "panel_topside"
     topside.classList.add("panel","side","top_panel")
-    topside.innerHTML = JSON.stringify(currentMap)
+    topside.innerHTML = displayInfo(currentMap, ["name","levels","level","spawn"])
 
     botside = document.createElement("div")
     botside.id = "panel_botside"
@@ -300,8 +351,12 @@ function setOpponent(){
         else{
             opponent = opponent_units[i]
         }
-        let overlay = document.getElementById("top_overlay"+i)
+        opponent.uuid = i
 
+        let overlay = document.getElementById("top_overlay"+i)
+        let animation = document.getElementById("top_animation"+i)
+
+        
         unitDiv.style.backgroundImage = `url('${opponent.image}')`
         unitDiv.style.backgroundSize = "cover"
         unitDiv.id = "opponent_"+i
@@ -311,11 +366,12 @@ function setOpponent(){
 
         unitDiv.addEventListener("click", (e) => {
             let div = document.getElementById("panel_topside") 
-            div.innerHTML = displayInfo(opponent, ["type","name","hp","damage","level","xpPerLvl","givenXp"])
+            div.innerHTML = displayInfo(opponent, ["type","name","hp","damage","armor","level","xpPerLvl","givenXp"])
         })
 
         slot.replaceChildren(unitDiv)
         slot.appendChild(overlay)
+        slot.appendChild(animation)
     }
 }
 
@@ -326,7 +382,7 @@ function setUnit(container, unit){
     unitDiv.className = "card_div"
     unitDiv.draggable = true
     unitDiv.ondragstart = selectUnit
-    unitDiv.style.backgroundImage = `url('images/${unit.image}')`
+    unitDiv.style.backgroundImage = `url('${unit.image}')`
     unitDiv.style.backgroundSize = "cover"
     unitDiv.style.backgroundRepeat = "no-repeat"
     let overlay = document.createElement("div")
@@ -337,7 +393,7 @@ function setUnit(container, unit){
 
     unitDiv.addEventListener("click", (e) => {
         let div = document.getElementById("panel_topside")
-        div.innerHTML = displayInfo(unit,["name","type","hpPerLvl","damage","exp","xpPerLvl","level"])
+        div.innerHTML = displayInfo(unit,["name","type","class","hpPerLvl","damage","armor","exp","xpPerLvl","level"])
     })
 
     unitDiv.appendChild(overlay)
@@ -359,11 +415,6 @@ function setPlayerPanel(){
     }
 }
 
-function displayOnSidePanel(text){
-    let panel = document.getElementById("panel_topside")
-    panel.innerHTML = text
-}
-
 function setBoardBg(){
     let bg = currentMap.image
     tab.style.backgroundImage = `url('${bg}')`
@@ -380,6 +431,12 @@ function generateBoard(map){
     addSlots()
     setBoardBg()
     initGame()
+}
+
+//utils
+function displayOnSidePanel(text){
+    let panel = document.getElementById("panel_topside")
+    panel.innerHTML = text
 }
 
 // EVENTS ---------------------------------------------------
@@ -483,6 +540,28 @@ function setDnd(){
     }
 }
 
+function addSlotEvents(){
+    for(let unit of positions){
+        if(!unit) continue
+        console.log(unit)
+        let slot = document.getElementById("unit_"+unit.uuid)
+        slot.ondragstart = selectUnit
+        slot.addEventListener("click", () => {
+            let div = document.getElementById("panel_topside")
+            div.innerHTML = displayInfo(unit,["name","type","lass","damage","armor","exp","xpPerLvl","level"])
+        })
+    }
+    for(let unit of opponent_units){
+        if(!unit) continue
+        let slot = document.getElementById("opponent_"+unit.uuid)
+        slot.addEventListener("click", () => {
+            let div = document.getElementById("panel_topside")
+            div.innerHTML = displayInfo(unit,["name","type","hpPerLvl","damage","armor","exp","level"])
+        })
+    }
+    setDnd()
+}
+
 //TOWN TAB -----------------------------------------------------
 function generateTownRightPanel(){
     let rightPanel = document.createElement("div")
@@ -501,7 +580,7 @@ function generateTownRightPanel(){
         info.className = "town_info"
 
         let image = document.createElement("img")
-        image.src = "images/" + structure.image
+        image.src = structure.image
         image.className = "town_image"
         image.addEventListener("click", () => {
             addStructure(structure)
@@ -542,7 +621,7 @@ function generateTownLeftPanel(){
         info.style.fontSize = "100%"
 
         let image = document.createElement("img")
-        image.src = "images/" + structure.image
+        image.src = structure.image
         image.style.float = "left"
         image.style.marginRight = "10"
         image.style.width = "350"
@@ -667,12 +746,13 @@ function displayUnitsOnPanel(){
     skipButton.className = "button_style"
     skipButton.innerHTML = "skip"
     skipButton.addEventListener("click", () =>{
-        console.log("click!")
+        let lowhp = units.filter((e) => e.hp < e.maxhp)
+        if(lowhp.length == 0) alert("no units are injured")
         if(player.resources.gold >= 5){
-            console.log(player)
             player.resources.gold -= 5
             runPostDungeon()
             displayUnitsOnPanel()
+            //updateUnitText()
         }
         else{
             alert("You have ran out of money. Get fukt")
@@ -685,11 +765,11 @@ function displayUnitsOnPanel(){
         div.className ="unit_info_div"
 
         let span = document.createElement("span")
-        span.innerHTML = displayInfo(unit, ["name", "damage","hp", "maxhp","level"])
+        span.innerHTML = displayInfo(unit, ["name","type","class", "damage","hp", "maxhp","level"])
         span.className = "unit_info"
 
         let img = document.createElement("img")
-        img.src = "images/" + unit.image
+        img.src = unit.image
         img.className ="unit_info_img"
         img.addEventListener("click", () =>{
             if(unit.hp > 0){
@@ -704,6 +784,15 @@ function displayUnitsOnPanel(){
     })
     unitButtons.forEach((e) => leftPanel.appendChild(e))
     displayUnitsOnRightPanel()
+}
+
+function updateUnitText(){
+    let div = document.getElementById("unit_panel")
+    for(let child in div.children){
+        if(child.className == "unit_info_div"){
+            let span = child.children.filter((e) => e.className == "unit_info")
+        }
+    }
 }
 
 function generateRightInfoPanel(){
@@ -740,12 +829,18 @@ function setNrb_level(nbr){
 
 function fillMapInfoPanel(map){
     let mapPanel = document.getElementById("map_info_panel")
-    mapPanel.innerHTML = "<div style='text-decoration:underline'>Map<div>"
+    let img = document.createElement("img")
+    img.src = map.image
+    img.width = 100
+    img.heigh = 150
+    mapPanel.innerHTML = "<div style='text-decoration:underline'>Map<div><div>"
+    mapPanel.appendChild(img)
+    mapPanel.innerHTML += "</div><div>"
     mapPanel.innerHTML +=  displayInfo(map,["name","level","levels","spawn"])
+    mapPanel.innerHTML += "</div>"
     setNrb_level(map.levels)
 }
 
-//test function
 function addUnit(unit){
     if(player_units.length >= 4){
         alert("too many units") 
@@ -766,10 +861,8 @@ function displayUnitsOnRightPanel(){
     for(let unit of player_units){
         let img = document.createElement("img")
         img.id = "unit_right_man_panel_" + unit.uuid
-        img.src = "images/"+unit.image
+        img.src = unit.image
         img.className ="unit_info_img unit_right_man"
-        img.width = 100
-        img.height = 150
         img.addEventListener("click", (event) => {
             player_units = player_units.filter((e) => e.uuid != unit.uuid)
             let img = document.getElementById("unit_right_man_panel_" + unit.uuid)
@@ -814,10 +907,11 @@ function generateUnitLeftPanel(){
         let div = document.createElement("div")
         div.className = "unit_info_div"
         let span = document.createElement("span")
+        span.id = "unit_text_" + unit.uuid
         span.innerHTML = displayInfo(unit, Object.keys(unit).slice(0,-5))
         span.className = "unit_info"
         let img = document.createElement("img")
-        img.src = "images/" + unit.image
+        img.src = unit.image
         img.className = "unit_info_img"
         img.addEventListener("click", () =>{
             currentUnit = unit
@@ -933,7 +1027,7 @@ function showPlayerInventory(){
         div.className = "player_inventory_div"
         let img = document.createElement("img")
         img.className = "player_inventory_img"
-        img.src = "images/" + item.image
+        img.src = item.image
         img.width = 90
         img.heigh = 180
         img.addEventListener("click", (e) =>{
@@ -960,6 +1054,12 @@ function addItemToUnit(item){
     unit.inventory[type] = item
     player.inventory = player.inventory.filter((e) => e.uuid != item.uuid)
 
+    unit.armor += item.armor
+    unit.damage += item.armor
+
+    let text_span = document.getElementById("unit_text_"+currentUnit.uuid)
+    text_span.innerHTML = displayInfo(unit, Object.keys(unit).slice(0,-5))
+
     showPlayerInventory()
     showUnitInventory(unit)
 }
@@ -978,10 +1078,11 @@ function showUnitInventory(unit){
         item_slot.className = "item_slot"
 
         let removeItem = () =>{
-            console.log(currentUnit.inventory)
-            console.log(key)
             let item = currentUnit.inventory[key]
-            console.log(item)
+            currentUnit.armor -= item.armor
+            currentUnit.damage -= item.damage
+            let text_span = document.getElementById("unit_text_"+currentUnit.uuid)
+            text_span.innerHTML = displayInfo(unit, Object.keys(unit).slice(0,-5))
             player.inventory.push(item)
             delete currentUnit.inventory[key]
             let item_slot = document.getElementById(key + "_slot")
@@ -992,7 +1093,7 @@ function showUnitInventory(unit){
         }
         //If the item is already in inventory, we need to avoid adding a new event
         let image = document.createElement("img")
-        image.src = "images/" + item.image
+        image.src = item.image
         image.className = "inventory_image"
         //todo actually fix this bug
         if(key == "helm"){
@@ -1023,12 +1124,13 @@ function displayInfo(json, keys){
     let str = ''
     if(keys == null){
         for(let key of Object.keys(json)){
-            str = str + capitalizeFirstLetter(key) + "\t" + JSON.stringify(json[key]) + "<br>" 
+            str = str + capitalizeFirstLetter(key) + "\t" + JSON.stringify(json[key]).replaceAll("_"," ") + "<br>" 
         }
     }
     else{
         for(let key of keys){
-            str = str + capitalizeFirstLetter(key) + "\t" + JSON.stringify(json[key]) + "<br>" 
+            if(json[key] == null) continue
+            str = str + capitalizeFirstLetter(key) + "\t" + JSON.stringify(json[key]).replaceAll("_"," ") + "<br>" 
         }
     }
     return str
@@ -1082,10 +1184,30 @@ function generateParentInterface(){
     container.appendChild(board)
     container.appendChild(tab)
 
+    //generateUnit()
+    //generateUnit()
+    //generateUnit()
+    //generateUnit()
+    //generateMap()
+    //generateMap()
+    //generateMap()
+    //generateMap()
+    //generateItem()
+    //generateItem()
+    //generateItem()
+    //generateItem()
+    generateItem()
+    //generateStructure()
+    //generateStructure()
+    //generateStructure()
+    //generateStructure()
+    //generateStructure()
     generateManagementPanel()
 }
 
 function generateStartInterface(){
+    //load_game()
+    //generateParentInterface()
     generateMenu() 
 }
 

@@ -1,11 +1,11 @@
 let structures_templates  = {
     "fort":{
         "name":"Chateau Irenicus",
-        "image":"structures/fort.png"
+        "image":"images/structures/fort.png"
     },
     "hut":{
         "name":"Shaman's hut",
-        "image":"structures/hut.png"
+        "image":"images/structures/hut.png"
     }
 }
 

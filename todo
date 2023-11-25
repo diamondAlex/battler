@@ -1,3 +1,6 @@
+having 2 of the same struct in the buy list will filter them both out if you buy one
+lock all events while animations are happening
+there's still issues with the enter window event on the creation page. Like, it will be called if there's something missing, like name or image
 leaving should run postDungeon if the dungeon is not done
 death bugs the next dungeon.
 having multiple quests with the same name pops all of them (from the quest page)

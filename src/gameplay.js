@@ -2,6 +2,8 @@ let turnEnded = 0
 let dungeonEnded = 0
 //the implementation lacks consistency, opp and player turns are built different
 async function playTurn(){
+    if(!positions.find((e) => e != null)) return
+    disableBoardButtons()
     //player turn
     if(turnEnded == 0 && dungeonEnded ==0){
         for(let i = positions.length -1;i>=0;i--){
@@ -13,7 +15,9 @@ async function playTurn(){
             //let div = document.getElementById("board_topside")
             //div.classList.add("animation_div")
             if(!(unit.hp <= 0 || opp.hp <= 0)){
-                opp.hp = opp.hp - unit.damage
+                if(calculateDodge(opp)) {
+                    opp.hp = opp.hp - unit.damage
+                }
                 await attack(unit,"bot")
                 await castSpells(unit)
                 if(opp.hp <= 0){
@@ -27,8 +31,10 @@ async function playTurn(){
             let unit = positions[pickOpponent(positions)]
             let opp = opponent_units[i]
             if(!(unit.hp <= 0 || opp.hp <= 0)){
-                unit.hp = unit.hp - opp.damage
-                await attack(i,"top")
+                if(calculateDodge(unit)) { 
+                    unit.hp = unit.hp - opp.damage 
+                }
+                await attack(opp,"top")
                 //await castSpells(unit)
                 if(unit.hp <= 0){
                     unit.hp = 0
@@ -40,7 +46,6 @@ async function playTurn(){
                 }
             }
         }
-        updateHps()
         if(!checkForOppAlive()){
             nbr_levels--
             if(nbr_levels > 0){
@@ -48,6 +53,8 @@ async function playTurn(){
                 betweenRound()
             }
             else{
+                addSlotEvents()
+                enableBoardButtons()
                 dungeonEnded = 1
                 displayOnSidePanel("Dungeon Ended")
                 addQuest()
@@ -56,34 +63,53 @@ async function playTurn(){
 
         }
     }
+    //this is bad. fix the path the code takes to avoid doubling
+    addSlotEvents()
+    enableBoardButtons()
+}
+
+function calculateDodge(unit){
+    let armor = unit.armor
+    let dodge = Math.log(armor) * 10
+    let odds = Math.ceil(Math.random()*100)
+
+    if(dodge < odds){
+        return 1
+    }
+    else{
+        displayOnSidePanel("Dodged!")
+        return 0
+    }
 }
 
 async function attack(unit, side){
     let targetDiv
     let animation
-    console.log(unit)
-    console.log(side)
     if(side == 'bot'){
         targetDiv = document.getElementById("unit_" + unit.uuid)
         animation = "animation_attack"
     }
     else{
-        targetDiv = document.getElementById("opponent_" + unit)
+        targetDiv = document.getElementById("opponent_" + unit.uuid)
         animation = "animation_attack_opp"
-    }
-    console.log(targetDiv)
-    if(targetDiv.classList.contains(animation)){
-        let new_div = targetDiv.cloneNode(true)
-        targetDiv.parentNode.replaceChild(new_div, targetDiv)
     }
     if(!targetDiv.classList.contains(animation)){
         targetDiv.classList.add(animation)
     }
-    (new Audio("sounds/sword.wav")).play()
+
+    updateHps()
+
+    let play = (new Audio("sounds/sword.wav")).play()
+
     await (new Promise((resolve) => {
         setTimeout(() => {
+            if(targetDiv.classList.contains(animation)){
+                targetDiv.classList.remove(animation)
+                let new_div = targetDiv.cloneNode(true)
+                targetDiv.parentNode.replaceChild(new_div, targetDiv)
+            }
             resolve()
-        }, 1500)
+        }, 1200)
     }))
 }
 
@@ -91,26 +117,41 @@ async function castSpells(unit){
     if(unit.spells.length != 0){
         for(let spell of unit.spells){
             let spell_info = spells.find((e) => e.name == spell)
-            spell_info.action()
+            let targets = spell_info.target == 'units' ? player_units : opponent_units; 
+            let target = spell_info.action(targets)
+            //this is kicking the can down the road and I don't approve of it.
+            if(target == null) continue
             let targetDiv
             spell_info.sound()
-            if(spell_info.target == "opponents"){
+            if(target){
+                console.log(target)
+                if(spell_info.target == "opponents"){
+                    targetDiv = document.getElementById("top_animation"+target.uuid)
+                }
+                else if(spell_info.target == "units"){
+                    targetDiv = document.getElementById("bottom_slot"+target.uuid)
+                }
+                console.log(targetDiv)
+            }
+            else if(spell_info.target == "opponents"){
                 targetDiv = document.getElementById("board_topside")
             }
             else if(spell_info.target == "units"){
                 targetDiv = document.getElementById("board_botside")
             }
-            if(targetDiv.classList.contains(spell_info.animation)){
-                let new_div = targetDiv.cloneNode(true)
-                targetDiv.parentNode.replaceChild(new_div, targetDiv)
-            }
             if(!targetDiv.classList.contains(spell_info.animation)){
                 targetDiv.classList.add(spell_info.animation)
             }
+            updateHps()
             await (new Promise((resolve) => {
                 setTimeout(() => {
+                    if(targetDiv.classList.contains(spell_info.animation)){
+                        targetDiv.classList.remove(spell_info.animation)
+                        let new_div = targetDiv.cloneNode(true)
+                        targetDiv.parentNode.replaceChild(new_div, targetDiv)
+                    }
                     resolve()
-                }, 1500)
+                }, 1200)
             }))
         }
     }
@@ -126,10 +167,8 @@ function nextLevel(){
 }
 
 function runReward(){
-    console.log("RUN REWARD")
     if(currentMap.rewards.length != 0){
         for(let reward of currentMap.rewards){
-            console.log(reward)
             if(reward.length!=0){
                 if(reward[0]){
                     reward[0](...(reward.slice(1)))
@@ -151,7 +190,7 @@ function addQuest(){
 }
 
 function betweenRound(){
-    let heal = roll([10,15],1)
+    let heal = roll([2,5],1)
     for(unit of positions){
         if(unit){
             if(unit.hp < unit.maxhp){
@@ -181,7 +220,6 @@ function betweenRound(){
             //for(let unit of units){
                 //if(unit){
                     //unit.hp = unit.hp + heal
-                    //console.log("healed for " + heal)
                     //if(unit.hp > unit.maxhp){
                         //unit.hp = unit.maxhp
                     //}
@@ -291,14 +329,22 @@ function updateHps(){
     }
 }
 
+//this is very dubious
 function runPostDungeon(){
     for(let structure of unit_structures){
         if(structure.perks.length != 0){
             for(let perk of structure.perks){
-                console.log("RUNNING STRUCT ABILITY")
-                spells[perk](structure.level)
+                perk.action(units)
             }
         }
     }
-    spells["heal"](1)
+    //TEMP
+    let heal = roll([2,5],1)
+    for(unit of positions){
+        if(unit){
+            if(unit.hp < unit.maxhp){
+                unit.hp = unit.hp + heal > unit.maxhp ? unit.maxhp : unit.hp + heal;
+            }
+        }
+    }
 }

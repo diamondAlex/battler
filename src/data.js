@@ -64,6 +64,9 @@ function load_game(){
 
     unit_structures = getItem("unit_structures")
     structures = getItem("structures")
+    uuid = units.length == 0 ? 0: Math.max(...(units.map((e) => e.uuid))) + 1
+    item_uuid = items.length == 0 ? 0 :Math.max(...(items.map((e) => e.uuid))) + 1
+    struct_uuid = structures.length == 0 ? 0: Math.max(...(structures.map((e) => e.uuid))) + 1
 }
 
 function save(){
@@ -171,7 +174,6 @@ function generatePlayer(name){
 
 let item_uuid = 0
 function generateItem(type,level){
-    console.log("GENERATING ITEM")
     if(type == null){
         type = selectRandom(Object.keys(items_templates))    
     }
@@ -186,12 +188,12 @@ function generateItem(type,level){
                     + selectRandom(template.qualifier),
             type:type,
             image: selectRandom(template.images),
-            perks:[selectRandom(template.perks)],
+            //perks:[selectRandom(template.perks)],
             armor:roll(template.armor,level),
+            damage:roll(template.damage,level),
             uuid:item_uuid
         }
     items.push(item)
-    console.log("ADDING ITEM")
     player.inventory.push(item)
     item_uuid++
 }
@@ -202,7 +204,7 @@ function roll(rangeArr, amt=1){
     let max = rangeArr[1]
     max = max < min ? min: max;
     for(let i=0;i<amt;i++){
-        total = total + Math.floor(Math.random()*(rangeArr[1] - rangeArr[0]))
+        total = total + min + Math.floor(Math.random()*(rangeArr[1] - rangeArr[0]))
     }
     return total
 }
@@ -241,6 +243,7 @@ function generateOpponent(type,level){
             maxhp:hp,
             damage:template.stats.damage * level,
             level:level,
+            armor:template.stats.armor * level,
             exp: Math.round(10 * Math.pow(level, lvlXpRatio)),
             xpPerLvl:Math.round(10 * Math.pow(level, lvlXpRatio)),
             image: selectRandom(images),
@@ -261,7 +264,7 @@ function generateStructure(type = "fort",level=3){
         uuid:struct_uuid,
         level:level,
         cost:{"gold":100},
-        perks:["heal"],
+        perks:[spells.filter((e) => e.name == "heal")[0]],
         inventory:{},
         description:`Starting structures, heal your units every dungeon, 
         (unlocks basic shop?)`
@@ -270,28 +273,36 @@ function generateStructure(type = "fort",level=3){
     structures.push(structure)
 }
 
-function generateUnit(type="legio_nigra",level=1, name, image){
-    let template = units_templates[type]
+function generateUnit({type, unitClass,level=1, name, image} = {}){
+    if(type == null) type = selectRandom(Object.keys(types_templates))
+    if(unitClass == null) type = selectRandom(Object.keys(classes_templates))
+    let type_template = types_templates[type]
+    let class_template = classes_templates[unitClass]
     let status = getStatus(level)
     if(name == null) name = selectRandom(list_of_names.filter((e) => e[1] == 'Male'))[0]
-    if(image == null) image = selectRandom(template.images[status])
-    let hp = template.stats.minHp + roll(template.stats.hpPerLvl,level)
+    if(image == null) image = selectRandom(units_img_names)
+    console.log(type)
+    console.log(unitClass)
+    console.log(type)
+    let hp = type_template.stats.minHp + roll(type_template.stats.hpPerLvl,level)
 
     let unit = {
         name:name,
         type:type,
+        class:unitClass,
+        level:level,
         hp:hp,
         maxhp:hp,
-        hpPerLvl: template.stats.hpPerLvl,
-        damage:template.stats.damage * level,
-        dmgPerLvl:template.stats.dmgPerLvl,
-        level:level,
+        armor:type_template.stats.armor *level,
+        hpPerLvl: type_template.stats.hpPerLvl,
+        damage:type_template.stats.damage * level,
+        dmgPerLvl:type_template.stats.dmgPerLvl,
         exp: 0,
         xpPerLvl:10 * Math.pow(level, lvlXpRatio),
-        image: image,
         givenXp: 10 * Math.pow(level, givenXpRatio),
         inventory:{},
-        spells:["heal","thunder"],
+        spells:["burn"],
+        image: image,
         uuid:uuid
     }
     uuid++
@@ -319,10 +330,10 @@ function generateMap(type,rewards, level, levels){
     }
     if(level == null){
         //temporary
-        level = 1
+        level = roll([1,1],1)
     }
     if(levels == null){
-        levels = 3
+        levels = roll([1,1],1)
     }
     let map = {
             "levels":levels,
@@ -331,7 +342,7 @@ function generateMap(type,rewards, level, levels){
             "spawn":[
                 type
             ],
-            "image":"images/maps/" + maps_img_names.pop(),
+            "image":maps_img_names.pop(),
             "rewards":[rewards, [() => {
                 console.log("SHOULD REWARD GOLD")
                 player.resources.gold += 10*level
@@ -347,8 +358,13 @@ function getRandomMapType(){
 }
 
 function getRandomUnitType(){
-    let types = Object.keys(units_templates)
+    let types = Object.keys(types_templates)
     return selectRandom(types)
+}
+
+function getRandomUnitClass(){
+    let unitClass = Object.keys(classes_templates)
+    return selectRandom(unitClass)
 }
 
 function getRandomUnitName(){
@@ -366,9 +382,12 @@ function generateQuest({quest, args, description = "",level=1} = {}){
     console.log(level)
     let odds = roll([0,100],1)
     if(quest == null){
-        if(odds > 80){
+        if(odds > 0){
             let name = getRandomUnitName()
-            reward = [generateUnit, getRandomUnitType(), roll([level,level+3],1), name] 
+            reward = [generateUnit, {   type:getRandomUnitType(), 
+                                        unitClass:getRandomUnitClass(), 
+                                        level:roll([level,level+3],1), 
+                                        name:name}] 
             //todo, review the way to pick number of levels
             args = [getRandomMapType(), reward, roll([level,10],1), roll([2,4+level])]
             description = "Rescue " + name
@@ -397,8 +416,6 @@ function generateQuest({quest, args, description = "",level=1} = {}){
     let built_quest =  [() => {
         quest(...args)
     }, description]
-    console.log(args)
-    console.log(built_quest)
     return built_quest
 }
 
@@ -419,24 +436,52 @@ function addStructure(structure){
 }
 
 
-function generateSpell(){
-    spells = [
-        {
-            name:"heal",
-            action: () => { console.log("casted heal") },
-            animation: "animation_heal",
-            target:"units",
-            sound: () => {console.log("no sound effect")},
-        },{
-            name:"thunder",
-            action: () => { console.log("casted thunder") },
-            animation: "animation_thunder",
-            target:"opponents",
-            sound: () => {
-                (new Audio("sounds/thunder.wav")).play()
-            },
-        }
-    ]
-}
+spells = [
+    {
+        name:"heal",
+        fullname:"",
+        action: (targets) => { 
+            console.log(targets)
+            for(let target of targets){
+                target.hp += 2
+                if(target.hp > target.maxhp){
+                    target.hp = target.maxhp
+                }
+            }
+        },
+        animation: "animation_heal",
+        target:"units",
+        sound: () => {
+            (new Audio("sounds/heal.wav")).play()
+        },
+    },{
+        name:"thunder",
+        fullname:"",
+        action: (targets) => { 
+            for(let target of targets){
+                target.hp -= 2
+            }
+        },
+        animation: "animation_thunder",
+        target:"opponents",
+        sound: () => {
+            (new Audio("sounds/thunder.wav")).play()
+        },
+    },{
+        name:"burn",
+        fullname:"",
+        action: (targets) => { 
+            let valid_targets = targets.filter((e) => e.hp > 0)
+            if(valid_targets.length == 0) return null
+            let target = selectRandom(valid_targets)
+            target.hp -= 30
+            return target
+        },
+        animation: "animation_burn",
+        target:"opponents",
+        sound: () => {
+            (new Audio("sounds/burn.wav")).play()
+        },
+    }
+]
 
-generateSpell()
