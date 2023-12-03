@@ -209,12 +209,12 @@ function generateItem(type,level){
 }
 
 function roll(rangeArr, amt=1){
-    let total = rangeArr[0]
+    let total = 0
     let min = rangeArr[0]
     let max = rangeArr[1]
     max = max < min ? min: max;
     for(let i=0;i<amt;i++){
-        total = total +  Math.round(Math.random()*(rangeArr[1] - rangeArr[0]))
+        total = total + rangeArr[0] + Math.round(Math.random()*(rangeArr[1] - rangeArr[0]))
     }
     return total
 }

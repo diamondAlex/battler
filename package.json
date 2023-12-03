@@ -2,6 +2,6 @@
     "type":"module",
     "scripts":{
         "start":"xdg-open src/index.html",
-        "test":"xdg-open test/test.html"
+        "test":"xdg-open test.html"
     }
 }
