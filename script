@@ -1,3 +1,3 @@
 ls -rtd src/images/opponents/*/*/* | awk 'BEGIN{print "let opponents_img_names = ["}{ print "\x27" substr($1,5) "\x27," }END{print "]"}' >  src/opp_names.js
-ls -rtd src/images/maps/* | awk 'BEGIN{print "let maps_img_names = ["}{ print "\x27" substr($1,5) "\x27," }END{print "]"}' >  src/map_names.js
+ls -rtd src/images/maps/*/* | awk 'BEGIN{print "let maps_img_names = ["}{ print "\x27" substr($1,5) "\x27," }END{print "]"}' >  src/map_names.js
 ls -rtd src/images/units/* | awk 'BEGIN{print "let units_img_names = ["}{ print "\x27" substr($1,5) "\x27," }END{print "]"}' >  src/unit_names.js

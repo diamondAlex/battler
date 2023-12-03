@@ -1,7 +1,6 @@
 body{
     background-color:black;    
     font-family: 'Amiri', serif;
-    /*font-size:125%*/
 }
 select{
     font-family: 'Amiri', serif;
@@ -40,13 +39,12 @@ img{
     cursor:pointer;
 }
 .left{
+    font-size:110%;
     width:60%;
     height:100%;
     border:solid;
     border-radius:5px;
     float:left;
-    overflow-y:scroll;
-    overflow-x:hidden;
 }
 .right{
     width:35%;
@@ -56,7 +54,145 @@ img{
     border-color:black;
     float:left;
 }
-.side{
+
+/*IDLER*/
+.idler_panel{
+    display: flex;
+    width: 100%;
+    height: 100%;
+    background:rgba(158, 156, 152,0.9);
+    font-size:150%;
+    border:solid;
+    border-radius:5px;
+    border-color:black;
+}
+.idler_game_div{
+    flex:6;
+    display: inline-flex;
+    border: solid;
+    border-radius: 5px;
+    margin-top: 5%;
+    margin-bottom: 5%;
+    margin-right: 5%;
+}
+.idler_menu_div{
+    border-radius: 5px;
+    flex:1;
+    border: solid;
+    margin-left: 5%;
+    margin-top: 5%;
+    margin-bottom: 5%;
+}
+.idler_menu_option{
+    width: 80%;
+    height: 15%;
+    text-align: center;
+    margin: 8px;
+    font-size: 125%;
+    border: solid;
+}
+.idler_struct_div{
+    position: relative;
+    width: 35%;
+    height: 90%;
+    margin: 5px;
+    border: solid;
+}
+.idler_map_div{
+    overflow-y:scroll;
+    overflow-x:hidden;
+    position: relative;
+    width: 65%;
+    height: 95%;
+    margin: 5px;
+    border: solid;
+}
+.idler_map_unit_img{
+    position: relative;
+    display: inline;
+    width:55;
+    height: 100%;
+    /*margin-left: 2px;*/
+    border-width: 2px;
+    border-left: solid;
+    border-right: solid;
+}
+.idler_unit_div{
+    position: relative;
+    display: inline-block;
+    width: 26%;
+    height: 95%;
+    margin: 5px;
+    border: solid;
+    overflow-x: unset;
+    overflow-y: scroll;
+}
+.idler_item_unit{
+    display: inline-block;
+    position: relative;
+    margin:1.5%;
+    height: 120px;
+    width: 77px;
+}
+.idler_item_img_unit{
+    width: 75px;
+    height: 120px;
+    border: solid; 
+}
+.idler_item{
+    flex:1;
+    margin:1%;
+    width: 95%;
+    height: 85px;
+    border: solid; 
+    border-radius:5px;
+}
+.idler_item_map_img{
+    height: 100%;
+    width: 120px;
+}
+.idler_map_button{
+    background-color: black;
+    font-weight: bold;
+    color:white;
+    border-radius: 4px;
+    float: right; 
+}
+.idler_dialog{
+    background:rgba(188, 186, 182,0.95);
+    border-radius: 5px;
+    position:absolute;
+    left:10%;
+    top:20%;
+    width: 20%;
+    height: 40%;
+}
+.idler_selected_img{
+    border-style: groove;
+    border-color: white;
+}
+/*PLAYER*/
+.player_right_panel{
+    width: 40%;
+    display:flex;
+    flex-direction: column-reverse;
+    background:rgba(158, 156, 152,0.7);
+    font-size:150%;
+    overflow: scroll;
+}
+.player_left_panel{
+    width: 59%;
+    background:rgba(158, 156, 152,0.7);
+}
+.player_left_text{
+    font-size: 150%;
+    margin:5%;
+}
+/*  BOARD  */
+.board{
+    background:rgba(158, 156, 152,0.3);
+}
+.board_panel{
     width:90%;
     background:rgba(158, 156, 152,0.80);
     margin:0.5em;
@@ -65,18 +201,22 @@ img{
     border:solid;
     border-radius:10px;
     border-color:black;
-    /*float:left;*/
 }
-.top{
-   position:relative; 
+.board_top{
+    position:relative; 
+    height:40%;
 }
-.bot{
-   position:relative; 
-   top:120;
+.board_bot{
+    position:relative; 
+    top:90;
+    height:40%;
 }
-.panel{
-    width:90%;
-    margin-left:1.5em;
+.board_top_right{
+    font-size:145%; 
+}
+.board_bot_right{
+    position:relative; 
+    top:10;
 }
 .board_button{
     background:rgba(158, 156, 152,0.95);
@@ -85,9 +225,10 @@ img{
     border-radius:5px;
     padding:5px;
     margin-left:1.5em;
+    margin-top:0.7em;
     text-align:center;
 }
-.top_panel{
+.board_right_panel{
     overflow-wrap: break-word;
     margin-bottom:3em;
     background:rgba(158, 156, 152,0.95);
@@ -100,49 +241,116 @@ img{
 }
 .slot{
     position:relative;
-    bottom:5%;
-    z-index:1;
-    width:16%;
-    height:80%;
-    margin:1.7em;
+    top:2%;
+    width:19%;
+    height:75%;
+    margin:1.0em;
     border:solid;
     border-color:black;
     border-radius:10px;
     background:rgba(158, 156, 152,0.95);
     float:left;
 }
+.slot_panel_bot_right, .slot_panel_bot_right.slot_panel{
+    height:40%;    
+}
 .card_div{
+    /*background-size: 100% auto;*/
+    background-repeat: no-repeat;
+    background-size: 100%;
+    /*background-position: center;*/
     border-radius:10px;
     width:100%;
     height:100%;
     float:left;
-}
-.card{
-    width:100%;
-    height:100%;
-    border:solid;
-    border-radius:5px;
-    border-color:red;
 }
 .overlay_animation{
     background:rgba(150, 150, 15,0.10);
     width:100%;
     height:100%;
     position:absolute;
-    z-index:-1;
+    z-index: -1;
+}
+.overlay_spells{
+    /*visibility: hidden;*/
+    text-align: center;
+    border-radius: 5px;
+    background:rgba(50, 50, 50, 0.90);
+    font-weight: 700;
+    letter-spacing: .15rem;
+    color:white;
+    font-size: 115%;
+    position:absolute;
+    width: 100%;
+    bottom:0;
+    border-radius:2px;
 }
 .overlay{
+    background:rgba(150, 150, 150,0.80);
+    font-weight:700;
+    font-size: 110%;
     position:absolute;
-    border:solid;
-    border-radius:5px;
-    z-index:2;
-    color:white;
-    background-color:black;
+    border-radius:2px;
 }
 .dead{
     background-color:red;
     opacity:0.5;
 }
+.spell_dialog{
+    background:rgba(188, 186, 182,0.95);
+    border-radius: 5px;
+    position:absolute;
+    left:100%;
+    /*bottom:90%;*/
+    width: 300;
+    height: 175;
+    z-index:2;
+}
+/*TOWN*/
+.town_right{
+    background:rgba(158, 156, 152,0.95);
+    overflow-y:scroll; 
+    overflow-x:hidden;
+}
+.town_div_right{
+    display:block;
+    padding:2%;
+    width:90%;
+    height:20%;
+}
+.town_image{
+    border:solid;
+    border-style:groove;
+    border-color: black;
+    display:block;
+    float:left;
+    margin-right:15px;
+    width:125;
+    height:75;
+}
+.town_name{
+    font-size:150%;
+}
+.town_div_left{
+    display:flex;
+    border: solid;
+    border-radius: 4px;
+    width:90%;
+    height:35%;
+    margin:2%;
+}
+.town_struct_img{
+    border:solid;
+    border-radius:4px;
+    margin:10px;
+    width:350;
+    height:200;
+}
+.town_struct_info{
+    margin-left: 2%;
+    font-size:125%;
+}
+/* MANAGEMENT/MAPS */
 .management_top{
     height:49%;
     padding:5%;
@@ -150,9 +358,25 @@ img{
     font-size:150%;
 }
 .unit_info_div{
+    margin:2%;
+    border-radius: 4px;
+    border: solid;
     display:flex;
-    width: 100%;
+    height: 40%;
+    width: 90%;
     padding:3%;
+}
+.unit_info{
+    border: solid;
+    border-radius: 2px;
+    width: 60%;
+    height: 80%;
+    font-size:125%;
+    padding-left:2%;
+    padding-top:2%;
+    margin:2%;
+    display :inline-block;
+    overflow-y: scroll;
 }
 .unit_info_img{
     border-style:ridge;
@@ -162,41 +386,6 @@ img{
     margin-top:2%;
     width:150;
     height:225;
-}
-.town_right{
-    background:rgba(158, 156, 152,0.95);
-    overflow-y:scroll; 
-    overflow-x:hidden;
-}
-.town_div{
-    display:block;
-    padding:2%;
-    width:90%;
-    height:20%;
-}
-.town_image{
-    display:block;
-    float:left;
-    margin-right:15px;
-    width:150;
-    height:100;
-}
-.town_info{
-    padding:2%;
-    display:block;
-}
-.town_name{
-    padding:2%;
-    padding-left:2%;
-    display:block;
-    font-size:150%;
-}
-.unit_info{
-    font-size:125%;
-    padding-left:2%;
-    padding-top:2%;
-    display :inline-block;
-    wordWrap: break-word;
 }
 .player_inventory_img{
     border: solid;
@@ -255,7 +444,6 @@ img{
 }
 .slot_panel{
     position:relative;
-    z-index:1;
     width:16%;
     height:50%;
     margin:0.8em;
@@ -266,15 +454,30 @@ img{
     float:left;
 }
 .bg_panel{
-    background:rgba(158, 156, 152,0.5);
+    background:rgba(158, 156, 152,0.9);
+    overflow-y:scroll;
 }
 .map_panel{
     background:rgba(158, 156, 152,0.5);
 }
 .maps_div{
+    background:rgba(158, 156, 152,0.5);
+    border:solid;
+    border-radius:4px;
     position:relative;
-    width:100%;
+    left:2%;
+    width:95%;
     height:30%;
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+.map_panel_text{
+    position:absolute;
+    width:42%;
+    height:90%;
+    left:55%;
+    top:5%;
+    font-size: 140%;
 }
 .maps_img{
     border:solid;
@@ -283,7 +486,6 @@ img{
     width:50%;
     height:90%;
     margin:10px;
-    z-index:1
 }
 /*need to center the text*/
 .maps_overlay{
@@ -296,43 +498,42 @@ img{
     padding: 3;
     font-size:200%;
     color:black;
-    z-index:2;
     border-radius:5px;
 }
 .info_slot{
-    float:left;
-    background:rgba(158, 156, 152,0.5);
+    background:rgba(158, 156, 152,0.7);
     height:40;
     width:75;
     position:relative;
-    z-index:1;
     border:solid;
     border-radius:5px;
 }
 .item_slot{
-    height:100;
-    width:100;
-    background:rgba(158, 156, 152,0.5);
+    height:140;
+    width:110;
+    background:rgba(158, 156, 152,0.7);
     position:relative;
-    z-index:1;
-    border:solid;
     border-radius:5px;
 }
 .quest_panel{
-    background:rgba(158, 156, 152,0.5);
+    height: 80%;
+    background:rgba(158, 156, 152,0.9);
     position:relative;
     left:5%;
-    padding:5;
-    font-size:150%;
+    padding:5%;
+    font-size:175%;
     width:45%;
+    overflow-y:scroll;
+}
+.quest_text{
+    cursor: pointer;    
 }
 .inventory_image{
     border:solid;
     border-radius:5px;
-    height:100;
-    width:100;
+    height:140;
+    width:110;
     position:relative;
-    z-index:2;
 }
 .inventory_slot{
     border:solid;
@@ -340,7 +541,6 @@ img{
     height:100;
     width:100;
     position:relative;
-    z-index:2;
 }
 .tab_button{
     font-size:120%;
@@ -348,11 +548,6 @@ img{
     border-top-right-radius:10px;
     border:none;
     margin-right:3px;
-}
-.board{
-    background:rgba(158, 156, 152,0.3);
-    overflow-y: hidden;
-    overflow-x:hidden;
 }
 .button_style{
      background:rgba(158, 156, 152,0.5);   
@@ -467,45 +662,6 @@ img{
 }
 
 /*ANIMATION*/
-.animation_heal{
-  animation-name: heal;
-  animation-duration: 800ms;
-}
-.animation_thunder{
-  animation-name: thunder;
-  animation-duration: 800ms;
-}
-.animation_burn{
-  animation-name: burn;
-  animation-duration: 800ms;
-}
-
-@keyframes burn {
-  from {
-      position:absolute;
-      z-index: 4;
-      background:rgba(252, 49, 3,0.3);
-  }
-  to {
-      background:rgba(252, 186, 3,0.3);
-  }
-}
-@keyframes heal {
-  from {background-color: blue;}
-  to {background-color: white;}
-}
-@keyframes thunder {
-   0%{
-      background-color: white;
-  }
-  35% {
-      background-image: url("images/bg/thunder_to.png");
-      background-size: cover;
-  }
-  70% {
-      background-color: white;
-  }
-}
 .animation_attack_opp{
   animation-name: attack_opp;
   animation-duration: 800ms;
@@ -554,5 +710,60 @@ img{
         bottom:0%;
         width: 100%;
         height: 100%;
+    }
+}
+
+/*ANIMATION SPELLS*/
+.animation_heal{
+  animation-name: heal;
+  animation-duration: 800ms;
+}
+.animation_thunder{
+  animation-name: thunder;
+  animation-duration: 800ms;
+}
+.animation_burn{
+  animation-name: burn;
+  animation-duration: 800ms;
+}
+.animation_cleave{
+  animation-name: cleave;
+  animation-duration: 800ms;
+}
+
+@keyframes burn {
+  from {
+      position:absolute;
+      z-index: 4;
+      background:rgba(252, 49, 3,0.3);
+  }
+  to {
+      background:rgba(252, 186, 3,0.3);
+  }
+}
+@keyframes heal {
+  from {background-color: blue;}
+  to {background-color: white;}
+}
+@keyframes thunder {
+   0%{
+      background-color: white;
+  }
+  35% {
+      background-image: url("images/bg/thunder_to.png");
+      background-size: cover;
+  }
+  70% {
+      background-color: white;
+  }
+}
+@keyframes cleave {
+    from{
+        position:absolute;
+        z-index: 4;
+        background-color: red;
+    }
+    to {
+        background-color: black;
     }
 }

@@ -3,10 +3,11 @@
 let opponents_templates = {
     "demon":{
         "stats":{
-            "minHp": 5,
-            "hpPerLvl":[5,12], 
+            "minHp": 7,
+            "hpPerLvl":[3,5], 
             "damage":1,
-            "armor":1
+            "armor":2,
+            "speed":[1,2]
         },
         "name":{
             "low":["Grimsnarl", "Maledrax", "Slinker", "Gloomfiend", "Shadowclaw"],
@@ -26,15 +27,14 @@ let opponents_templates = {
             "high":[],
             "top":[]
         },
-        "images":{
-        }
     },
     "orc":{
         "stats":{
-            "minHp": 5,
-            "hpPerLvl":[5,12], 
+            "minHp": 10,
+            "hpPerLvl":[2,5], 
             "damage":1,
-            "armor":1
+            "armor":1,
+            "speed":[1,2]
         },
         "name":{
             "low":["Grunk", "Murg", "Grog", "Dorg", "Snag", "Thruk", "Zug", "Vorg", "Narb", "Grob", "Glunk", "Drub", "Snik", "Rurg", "Throg", "Krog", "Brug", "Zog", "Snarl", "Grish"],
@@ -54,11 +54,32 @@ let opponents_templates = {
             "high":[],
             "top":[]
         },
-        "images":{
-            "low":["opponents/orc_low_1.png"],
-            "mid":["opponents/orc_mid_1.png","opponents/orc_mid_2.png"],
-            "high":["opponents/orc_high_1.png"],
+    },
+    "apparition":{
+        "stats":{
+            "minHp": 5,
+            "hpPerLvl":[2,3], 
+            "damage":2,
+            "armor":4,
+            "speed":[1,2]
+        },
+        "name":{
+            "low":["Spirit"],
+            "mid":["Shadow"],
+            "high":["Ghost"],
+            "top":["Dream"]
+        },
+        "qualifier":{
+            "low":["of Fear"],
+            "mid":["of Pain"],
+            "high":["of The Fallen"],
+            "top":["of Eternity"]
+        },
+        "spells":{
+            "low":[],
+            "mid":[],
+            "high":[],
             "top":[]
-        }
+        },
     }
 }

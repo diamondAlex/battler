@@ -1,35 +1,91 @@
 let classes_templates = {
-    "Fighter":{
+    "fighter":{
         "stats":{
-            "hpPerLvl":[6,12], 
-            "dmgPerLvl":[2,3],
+            "hpPerLvl":[2,4], 
+            "dmgPerLvl":[2,2],
+            "armor":5,
             "mana":5,
-            "manaPerLvl":10
+            "manaPerLvl":10,
+            "speed":5,
         },
-        "spells":{
+        "spells":[
+            "cleave",
+            //"block"
+        ],
+    },
+    "barbarian":{
+        "stats":{
+            "hpPerLvl":[3,5], 
+            "dmgPerLvl":[2,2],
+            "armor":2,
+            "mana":5,
+            "manaPerLvl":10,
+            "speed":3,
         },
+        "spells":[
+            "cleave",
+            //"rage",
+            //"shout"
+        ],
+    },
+    "warlock":{
+        "stats":{
+            "hpPerLvl":[1,3], 
+            "dmgPerLvl":[1,1],
+            "armor":1,
+            "mana":10,
+            "manaPerLvl":20,
+            "speed":3,
+        },
+        "spells":[
+            "burn",
+            "lifesteal",
+            //"soul steal"
+        ],
+    },
+    "cleric":{
+        "stats":{
+            "hpPerLvl":[2,3], 
+            "dmgPerLvl":[1,2],
+            "armor":2,
+            "mana":10,
+            "manaPerLvl":15,
+            "speed":3,
+        },
+        "spells":[
+            "heal",
+            //"boon"
+        ],
     },
     "Mage":{
         "name":"Thunder Warrior",
         "stats":{
-            "hpPerLvl":[4,5], 
-            "dmgPerLvl":[1,2],
-            "mana":10,
-            "manaPerLvl":20
+            "hpPerLvl":[1,2], 
+            "dmgPerLvl":[1,1],
+            "armor":1,
+            "mana":15,
+            "manaPerLvl":22,
+            "speed":3,
         },
-        "spells":{
-        },
+        "spells":[
+            "burn",
+            "thunder"
+            //"ice armor"
+        ],
     },
     "Rogue":{
         "stats":{
-            "hpPerLvl":[5,8], 
-            "damage":5,
-            "dmgPerLvl":[2,3],
+            "hpPerLvl":[1,3], 
+            "dmgPerLvl":[3,5],
+            "armor":2,
             "mana":10,
-            "manaPerLvl":15
+            "manaPerLvl":10,
+            "speed":3,
         },
-        "spells":{
-        },
+        "spells":[
+            "cleave"
+            //"backstab",
+            //"evade"
+        ],
     },
 }
-

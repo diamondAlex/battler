@@ -22,7 +22,7 @@ async function playTurn(){
                 await castSpells(unit)
                 if(opp.hp <= 0){
                     dies(index, 'top')
-                    setXp(opp.givenXp)
+                    setXp(opp.givenXp, positions)
                 }
             }
         }
@@ -42,6 +42,7 @@ async function playTurn(){
                     if(!checkForUnitAlive()){
                         alert("You have been felled! Retreat back to your town")
                         leaveMap()
+                        return
                     }
                 }
             }
@@ -51,6 +52,7 @@ async function playTurn(){
             if(nbr_levels > 0){
                 turnEnded = 1 
                 betweenRound()
+                swapPlayNext()
             }
             else{
                 addSlotEvents()
@@ -59,6 +61,7 @@ async function playTurn(){
                 displayOnSidePanel("Dungeon Ended")
                 addQuest()
                 runReward()
+                finishMap(currentMap)
             }
 
         }
@@ -105,7 +108,9 @@ async function attack(unit, side){
         setTimeout(() => {
             if(targetDiv.classList.contains(animation)){
                 targetDiv.classList.remove(animation)
+                let children = targetDiv.children
                 let new_div = targetDiv.cloneNode(true)
+                new_div.children = children
                 targetDiv.parentNode.replaceChild(new_div, targetDiv)
             }
             resolve()
@@ -114,36 +119,44 @@ async function attack(unit, side){
 }
 
 async function castSpells(unit){
+    //this is a shitty fix
+    let unit_still_alive = opponent_units.find((e) => e.hp > 0)
+    if(!unit_still_alive) return
     if(unit.spells.length != 0){
-        for(let spell of unit.spells){
-            let spell_info = spells.find((e) => e.name == spell)
-            let targets = spell_info.target == 'units' ? player_units : opponent_units; 
-            let target = spell_info.action(targets)
-            //this is kicking the can down the road and I don't approve of it.
-            if(target == null) continue
-            let targetDiv
-            spell_info.sound()
-            if(target){
-                console.log(target)
+        let spell = unit.selectedSpell
+        if(spell == "") return
+        let spell_info = spells.find((e) => e.name == spell)
+        if(spell_info.action == null) return
+        let targets = spell_info.target == 'units' ? player_units : opponent_units; 
+        let hitTargets = spell_info.action(targets,unit)
+        //this is kicking the can down the road and I don't approve of it.
+        let targetDivs =[]
+        spell_info.sound()
+        if(hitTargets){
+            for(let hitTarget of hitTargets){
+    
                 if(spell_info.target == "opponents"){
-                    targetDiv = document.getElementById("top_animation"+target.uuid)
+                    targetDivs.push(document.getElementById("top_animation"+hitTarget.uuid))
                 }
                 else if(spell_info.target == "units"){
-                    targetDiv = document.getElementById("bottom_slot"+target.uuid)
+                    targetDivs.push(document.getElementById("bot_animation"+hitTarget.uuid))
                 }
-                console.log(targetDiv)
             }
-            else if(spell_info.target == "opponents"){
-                targetDiv = document.getElementById("board_topside")
-            }
-            else if(spell_info.target == "units"){
-                targetDiv = document.getElementById("board_botside")
-            }
+        }
+        else if(spell_info.target == "opponents"){
+            targetDivs.push(document.getElementById("board_topside"))
+        }
+        else if(spell_info.target == "units"){
+            targetDivs.push(document.getElementById("board_botside"))
+        }
+
+        let promises = []
+        for(let targetDiv of targetDivs){
             if(!targetDiv.classList.contains(spell_info.animation)){
                 targetDiv.classList.add(spell_info.animation)
             }
             updateHps()
-            await (new Promise((resolve) => {
+             promises.push((new Promise((resolve) => {
                 setTimeout(() => {
                     if(targetDiv.classList.contains(spell_info.animation)){
                         targetDiv.classList.remove(spell_info.animation)
@@ -152,8 +165,9 @@ async function castSpells(unit){
                     }
                     resolve()
                 }, 1200)
-            }))
+            })))
         }
+        await Promise.all(promises)
     }
     
 }
@@ -183,8 +197,7 @@ function runReward(){
 function addQuest(){
     let odds = Math.floor(Math.random()* 100)
     if(odds >= 0){
-        let newQuest = generateQuest({level:currentMap.level})
-        quests.push(newQuest)
+        let newQuest = generateQuest({level:currentMap.level+1})
         displayOnSidePanel(`Dungeon Over, You've been given a new Quest!`)
     }
 }
@@ -203,45 +216,19 @@ function betweenRound(){
 
 }
 
-//let spells = {
-    //"heal": (level) => {
-        //let heal = roll([5,10],level)
-        //if(positions.length != 0){
-            //for(let unit of positions){
-                //if(unit){
-                    //unit.hp = unit.hp + heal
-                    //if(unit.hp > unit.maxhp){
-                        //unit.hp = unit.maxhp
-                    //}
-                //}
-            //}
-        //}
-        //else{
-            //for(let unit of units){
-                //if(unit){
-                    //unit.hp = unit.hp + heal
-                    //if(unit.hp > unit.maxhp){
-                        //unit.hp = unit.maxhp
-                    //}
-                //}
-            //}
-            
-        //}
-    //}
-//}
-
-function setXp(givenXp){
-    for(let unit of positions){
+function setXp(givenXp, targets){
+    for(let unit of targets){
         if(unit){
             unit.exp = unit.exp + givenXp
             if(unit.exp >= unit.xpPerLvl){
                 let lvlUpHp = roll(unit.hpPerLvl,1)
+                let LvlUpDmg = roll(unit.dmgPerLvl,1)
                 unit.level = unit.level + 1 
                 unit.xpPerLvl = unit.xpPerLvl * lvlXpRatio
                 unit.exp = 0
                 unit.maxhp = unit.maxhp + lvlUpHp
                 unit.hp = unit.hp + lvlUpHp
-                unit.damage = unit.damage + roll(unit.dmgPerLvl,1)
+                unit.damage = unit.damage + LvlUpDmg
             }
         }
     }
@@ -253,8 +240,9 @@ function leaveMap(){
     player_units = []
     opponent_units = []
     positions = []
-    toggleButtons(["board","maps","units","quests","town"])
-    generateManagementPanel()
+    toggleButtons(["player","board","maps","units","quests","town"])
+    runPostDungeon()
+    generateMapsTab()
 }
 
 function checkForUnitAlive(){
@@ -302,7 +290,6 @@ function dies(unit, side){
             }
         }
         if(opp.inventory.length != 0){
-            console.log("adding item")
             player.inventory.push(...opp.inventory)
         }
     }
@@ -331,10 +318,10 @@ function updateHps(){
 
 //this is very dubious
 function runPostDungeon(){
-    for(let structure of unit_structures){
+    for(let structure of player_structures){
         if(structure.perks.length != 0){
             for(let perk of structure.perks){
-                perk.action(units)
+                perks[perk](structure)
             }
         }
     }

@@ -1,4 +1,14 @@
+the spell selection shouldn't reset every round
+the bank can't give money on rest otherwise it's an infinite money loop, it should probably just be on the idler
+the levelup system doesn't work at all
+final dungeon xp needs to be calculated for dungeon lvl and split over the 1-4 units on the board
+instead of accepting quests on click, show them in the right panel. Quests are gonna come in fast and should be dismissable
+make blueprints to be generated from blueprints array (in data), that way a blueprint will either lvl up an existing building, or create one from the blueprint
+use different border colors on structs to indicate the struct level (black -> bronze -> silver -> gold)
+right panel on board should display the list of moves/attacks done in a bg2 style, stats can be displayed on hover
+names have to fit gender
 having 2 of the same struct in the buy list will filter them both out if you buy one
+fix in battle healing so that units can only be brought back between levels
 lock all events while animations are happening
 there's still issues with the enter window event on the creation page. Like, it will be called if there's something missing, like name or image
 leaving should run postDungeon if the dungeon is not done
@@ -16,3 +26,5 @@ the quests are dubious. You get a new dungeon in order to find a dungeon? Maybe 
 resize all portrait to fit correctly
 use drag and drop (yay!) to reorder units in the units tab
 REFACTOR NAMES BRO WTF
+the town image is too boring, replace it
+the spell dialog would look better popping up beside the slot

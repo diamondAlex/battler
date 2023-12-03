@@ -1,5 +1,5 @@
-//THIS ISN't USED I THINK
 let uuid = 0
+//THIS ISN't USED I THINK
 let pipes = {
     "units":[
         function addInventory(units){
@@ -48,29 +48,37 @@ let game_units = []
 let maps = []
 let opponents = []
 let quests = []
-let unit_structures = []
+let player_structures = []
 let structures = []
-
-let spells
+let completedMaps = []
+let workers = []
 //serialize
+//not sure if this will prevent loading empty games or broken games
 function load_game(){
-    items = getItem("items")
     player = getItem("player")
+    console.log(player)
+    if(player.length == 0){
+        return false
+    }
+    items = getItem("items")
     units = getItem("units")
     game_units = getItem("game_units")
     maps = getItem("maps")
     opponents = getItem("opponents")
     quests = getItem("quests")
+    completedMaps = getItem("completedMaps")
+    workers = getItem("workers")
 
-    unit_structures = getItem("unit_structures")
+    player_structures = getItem("unit_structures")
     structures = getItem("structures")
     uuid = units.length == 0 ? 0: Math.max(...(units.map((e) => e.uuid))) + 1
     item_uuid = items.length == 0 ? 0 :Math.max(...(items.map((e) => e.uuid))) + 1
     struct_uuid = structures.length == 0 ? 0: Math.max(...(structures.map((e) => e.uuid))) + 1
+    map_uuid = structures.length == 0 ? 0: Math.max(...(structures.map((e) => e.uuid))) + 1
+    return true
 }
 
 function save(){
-    console.log("saving")
     //temp
     let onBoard = 0
     if(onBoard){
@@ -85,8 +93,10 @@ function save(){
         localStorage.setItem("maps",JSON.stringify(maps))
         localStorage.setItem("opponents",JSON.stringify(opponents))
         localStorage.setItem("quests",JSON.stringify(quests))
-        localStorage.setItem("unit_structures",JSON.stringify(unit_structures))
+        localStorage.setItem("unit_structures",JSON.stringify(player_structures))
         localStorage.setItem("structures",JSON.stringify(structures))
+        localStorage.setItem("completedMaps",JSON.stringify(completedMaps))
+        localStorage.setItem("workers",JSON.stringify(workers))
     }
 }
 
@@ -165,7 +175,7 @@ function generatePlayer(name){
     player ={
         "name": name,
         "resources":{
-            "gold":0
+            "gold":120
         },
         "inventory":[
         ]
@@ -204,13 +214,13 @@ function roll(rangeArr, amt=1){
     let max = rangeArr[1]
     max = max < min ? min: max;
     for(let i=0;i<amt;i++){
-        total = total + min + Math.floor(Math.random()*(rangeArr[1] - rangeArr[0]))
+        total = total +  Math.round(Math.random()*(rangeArr[1] - rangeArr[0]))
     }
     return total
 }
 
-const lvlXpRatio = 1.5
-const givenXpRatio = 1.3
+const lvlXpRatio = 2
+const givenXpRatio = 2
 function getStatus(lvl){ 
     if(lvl < 5) return "low"
     else if(lvl < 10) return "mid"
@@ -230,9 +240,9 @@ function selectRandom(list){
 
 function generateOpponent(type,level){
     let template = opponents_templates[type]
+    level = roll([level <= 1 ? 1: level-1, level+2],1)
     let hp = template.stats.minHp + roll(template.stats.hpPerLvl,level)
     let status = getStatus(level)
-    level = roll([level <= 1 ? 1: level-1, level+3],1)
     let images = opponents_img_names.filter((e) => e.includes(status))
     images = images.filter((e) => e.includes(type))
     let opponent = {
@@ -256,35 +266,43 @@ function generateOpponent(type,level){
 }
 
 let struct_uuid = 0
-function generateStructure(type = "fort",level=3){
+function generateStructure(type = "tavern",level=1){
     let template = structures_templates[type]
-    let structure = {
-        name:template.name,
-        image:template.image,
-        uuid:struct_uuid,
-        level:level,
-        cost:{"gold":100},
-        perks:[spells.filter((e) => e.name == "heal")[0]],
-        inventory:{},
-        description:`Starting structures, heal your units every dungeon, 
-        (unlocks basic shop?)`
+    let exists = structures.find((e) => e.name == type)
+    if(exists){
+        exists.amt += 1 
     }
-    struct_uuid++
-    structures.push(structure)
+    else{
+        let structure = {
+            name:template.name,
+            image:template.image,
+            uuid:struct_uuid,
+            level:level,
+            cost:{"gold":100},
+            perks:template.perks,
+            description:template.description,
+            amt:1
+        }
+        struct_uuid++
+        structures.push(structure)
+        return structure
+    }
+    return null
 }
 
 function generateUnit({type, unitClass,level=1, name, image} = {}){
     if(type == null) type = selectRandom(Object.keys(types_templates))
-    if(unitClass == null) type = selectRandom(Object.keys(classes_templates))
+    if(unitClass == null) unitClass = selectRandom(Object.keys(classes_templates))
     let type_template = types_templates[type]
     let class_template = classes_templates[unitClass]
     let status = getStatus(level)
     if(name == null) name = selectRandom(list_of_names.filter((e) => e[1] == 'Male'))[0]
     if(image == null) image = selectRandom(units_img_names)
-    console.log(type)
-    console.log(unitClass)
-    console.log(type)
-    let hp = type_template.stats.minHp + roll(type_template.stats.hpPerLvl,level)
+    let hp = type_template.stats.minHp + 
+        roll(type_template.stats.hpPerLvl,level) + 
+        roll(class_template.stats.hpPerLvl,level)
+    let damage = roll(type_template.stats.dmgPerLvl,level) + 
+        roll(class_template.stats.dmgPerLvl,level)
 
     let unit = {
         name:name,
@@ -293,18 +311,39 @@ function generateUnit({type, unitClass,level=1, name, image} = {}){
         level:level,
         hp:hp,
         maxhp:hp,
+        mana:class_template.stats.mana,
+        maxmana:class_template.stats.mana + class_template.stats.manaPerLvl * level,
         armor:type_template.stats.armor *level,
-        hpPerLvl: type_template.stats.hpPerLvl,
-        damage:type_template.stats.damage * level,
-        dmgPerLvl:type_template.stats.dmgPerLvl,
+        hpPerLvl:
+        [   
+            type_template.stats.hpPerLvl[0] + class_template.stats.hpPerLvl[0],
+            type_template.stats.hpPerLvl[1] + class_template.stats.hpPerLvl[1]
+        ],
+        damage:damage,
+        dmgPerLvl:
+        [   
+            type_template.stats.dmgPerLvl[0] + class_template.stats.dmgPerLvl[0],
+            type_template.stats.dmgPerLvl[1] + class_template.stats.dmgPerLvl[1]
+        ],
         exp: 0,
-        xpPerLvl:10 * Math.pow(level, lvlXpRatio),
-        givenXp: 10 * Math.pow(level, givenXpRatio),
+        xpPerLvl:100 * Math.pow(level, lvlXpRatio),
+        buffs:{},
         inventory:{},
-        spells:["burn"],
+        spells:[],
+        selectedSpell:"",
         image: image,
         uuid:uuid
     }
+    type_template.spells.forEach((e) => {
+        if(!unit.spells.includes(e)){
+            unit.spells.push(e)
+        }
+    })
+    class_template.spells.forEach((e) => {
+        if(!unit.spells.includes(e)){
+            unit.spells.push(e)
+        }
+    })
     uuid++
     units.push(unit)
 }
@@ -316,39 +355,44 @@ function selectRandomKey(obj){
 }
 
 //todo change rewards from an [] to an [[]] so you can add multiple rewards, then deconstruct
-function generateMap(type,rewards, level, levels){
-    let map_type;
+let map_uuid = 0
+function generateMap({type,rewards=[], level=1, levels=3,description}={}){
+    let template;
     if(type == null){
-        [map_type, type] = selectRandomKey(maps_templates) 
+        [template, type] = selectRandomKey(maps_templates) 
     }
     else{
-        map_type = maps_templates[type]
+        template = maps_templates[type]
     }
-    if(rewards == null){
-        //temporary
-        rewards = []
-    }
-    if(level == null){
-        //temporary
-        level = roll([1,1],1)
-    }
-    if(levels == null){
-        levels = roll([1,1],1)
-    }
+    let image = selectRandom(maps_img_names.filter((e) => e.includes(type)))
+
+    let map_resources = template.resources[getStatus(level)]
     let map = {
             "levels":levels,
             "level":level,
-            "name":selectRandom(map_type.name) + " " + selectRandom(map_type.qualifier),
+            "name":selectRandom(template.name) + " " + selectRandom(template.qualifier),
             "spawn":[
                 type
             ],
-            "image":maps_img_names.pop(),
-            "rewards":[rewards, [() => {
-                console.log("SHOULD REWARD GOLD")
-                player.resources.gold += 10*level
-            }]]
+            "image":image,
+            "rewards":[...rewards, 
+                [() => {
+                    for(let map_resource of map_resources){
+                        if(player.resources[map_resource]){
+                            player.resources[map_resource] += 10*level
+                        }
+                        else{
+                            player.resources[map_resource] = 10
+                        }
+                    }
+                }]
+            ],
+            "description":description,
+            "uuid":map_uuid
         }
+    map_uuid++
     maps.push(map)
+    return map
 }
 
 //this can be simplified
@@ -378,110 +422,299 @@ function getRandomStructure(){
 }
 getRandomStructure()
 
+let quest_uuid = 0
 function generateQuest({quest, args, description = "",level=1} = {}){
-    console.log(level)
     let odds = roll([0,100],1)
+    let rolled_level = roll([level,level+1],1)
     if(quest == null){
-        if(odds > 0){
+        if(odds > 85){
             let name = getRandomUnitName()
+            description = "Rescue " + name
             reward = [generateUnit, {   type:getRandomUnitType(), 
                                         unitClass:getRandomUnitClass(), 
-                                        level:roll([level,level+3],1), 
-                                        name:name}] 
+                                        level:roll([level,level+1],1), 
+                                        name:name,
+            }] 
             //todo, review the way to pick number of levels
-            args = [getRandomMapType(), reward, roll([level,10],1), roll([2,4+level])]
-            description = "Rescue " + name
+            args = {type:getRandomMapType(), rewards:[reward], level:rolled_level, levels:roll([2,2+level]),description:description}
             quest = generateMap
         }
-        //else if(odds > 50){
-            ////todo, review the way to pick number of levels
-            //args = [getRandomMapType(), [], roll([level,10],1), roll([2,4+level])]
-            //description = "Explore new dungeon"
-            //quest = generateMap
-        //}
         else if(odds > 70){
+            reward = [generateItem] 
+            description = "Locate a new artifact"
+            args = {type:getRandomMapType(), rewards:[reward], level:rolled_level, levels:roll([2,2+level]), description:description}
+            quest = generateMap
+        }
+        else if(odds > 55){
             //todo, review the way to pick number of levels
+            description = "find a new blueprint"
             reward = [generateStructure, getRandomStructure(), roll([3,level],1)] 
-            args = [getRandomMapType(), reward, roll([level,10],1), roll([2,4+level])]
-            description = "find a new structure blueprint"
+            args = {type:getRandomMapType(), rewards:[reward], level:rolled_level, levels:roll([2,2+level]), description:description}
             quest = generateMap
         }
         else{
-            reward = [generateItem] 
-            args = [getRandomMapType(), reward, roll([level,10],1), roll([2,4+level])]
-            description = "Locate a new artifact"
+            //todo, review the way to pick number of levels
+            let d_type = getRandomMapType()
+            description = "Explore new " + d_type + " dungeon"
+            reward = [generateCompletedMap, roll([1,level+1],1)] 
+            args = {type:d_type, rewards:[reward], level:rolled_level, levels:roll([2,2+level]), description:description}
             quest = generateMap
         }
     }
     let built_quest =  [() => {
-        quest(...args)
-    }, description]
-    return built_quest
+        quest(args)
+    }, description, quest_uuid,rolled_level]
+    quest_uuid++
+    quests.push(built_quest)
 }
 
-//add a bunch of resource types, and make them rewards
-//items/maps/unit should all be quest based
-function generateReward(){
-    let types = ["quest", "gold", "essence"]
-    let type = selectRandom(types)
+function generateCompletedMap(level){
+    finishMap(generateMap({level:level}))
 }
 
 function addStructure(structure){
-    let newStructs = structures.filter((e) => e.uuid != structure.uuid)
     if(player.resources.gold >= structure.cost["gold"]){
-        unit_structures.push(structure)
-        structures = newStructs
+        let newStructs
+        if(structure.amt > 1){
+            structure.amt --
+        }
+        else{
+            newStructs = structures.filter((e) => e.uuid != structure.uuid)
+        }
+
+        let existing_struct = player_structures.find((e) => e.name == structure.name)
+        if(existing_struct){
+            existing_struct.level += 1
+        }
+        else{
+            player_structures.push(structure)
+        }
+        if(newStructs)
+            structures = newStructs
         player.resources.gold -= structure.cost["gold"]
+    }
+    else{
+        alert("No enough gold!")
     }
 }
 
+//this is temporary
+function setupSpells(){
+    let spells_definitions= [
+        {
+            name:"cleave",
+            fullname:"",
+            description:"Does 5 + unit.level damage to the two leftmost units",
+            action: (targets, unit) => { 
+                //this is some scared implementation
+                let hits = 2
+                let tries = 3
+                let hitTarget = []
+                while(hits > 0 && tries >= 0){
+                    let target = targets[tries]
+                    if(target.hp > 0){
+                       target.hp -= 5 + unit.level 
+                        hits--
+                        hitTarget.push(targets[tries])
+                    }
+                    tries--
+                }
+                return hitTarget
+            },
+            animation: "animation_cleave",
+            target:"opponents",
+            sound: () => {
+                (new Audio("sounds/sword.wav")).play()
+            },
+        },
+        {
+            name:"block",
+            fullname:"",
+            description:"Does 5 + unit.level damage to the two leftmost units",
+            action: (targets) => { 
+                for(let target of targets){
+                    target.hp += 2
+                    if(target.hp > target.maxhp){
+                        target.hp = target.maxhp
+                    }
+                }
+            },
+            animation: "animation_heal",
+            target:"units",
+            sound: () => {
+                (new Audio("sounds/heal.wav")).play()
+            },
+        },
+        {
+            name:"heal",
+            fullname:"",
+            description:"Heals for 2+unit.level hp",
+            action: (targets, unit) => { 
+                for(let target of targets){
+                    target.hp += 2 + unit.level
+                    if(target.hp > target.maxhp){
+                        target.hp = target.maxhp
+                    }
+                }
+            },
+            animation: "animation_heal",
+            target:"units",
+            sound: () => {
+                (new Audio("sounds/heal.wav")).play()
+            },
+        },{
+            name:"thunder",
+            fullname:"",
+            description:"Does 3 + unit.level/2 damage to all enemies",
+            action: (targets,unit) => { 
+                for(let target of targets){
+                    target.hp -= 3 + Math.floor(unit.level/2)
+                }
+            },
+            animation: "animation_thunder",
+            target:"opponents",
+            sound: () => {
+                (new Audio("sounds/thunder.wav")).play()
+            },
+        },{
+            name:"burn",
+            fullname:"",
+            description:"Does 13 + unit.level * 1.5 damage to one opponent",
+            action: (targets, unit) => { 
+                let valid_targets = targets.filter((e) => e.hp > 0)
+                if(valid_targets.length == 0) return null
+                let target = selectRandom(valid_targets)
+                target.hp -= 13 + Math.floor(unit.level*1.5)
+                return [target]
+            },
+            animation: "animation_burn",
+            target:"opponents",
+            sound: () => {
+                (new Audio("sounds/burn.wav")).play()
+            },
+        },{
+            name:"lifesteal",
+            fullname:"Lifesteal",
+            description:"Does 10 + 1.5 unit.level damage and heals for 5 + 1.5 unit.level",
+            action: (targets, unit) => { 
+                let valid_targets = targets.filter((e) => e.hp > 0)
+                if(valid_targets.length == 0) return null
+                let target = selectRandom(valid_targets)
+                target.hp -= 10 + Math.floor(unit.level*1.5)
+                unit.hp += 5 + Math.floor(unit.level*1.5)
+                unit.hp = unit.hp > unit.maxhp ? unit.maxhp : unit.hp;
+                return [target]
+            },
+            animation: "animation_burn",
+            target:"opponents",
+            sound: () => {
+                (new Audio("sounds/burn.wav")).play()
+            },
+        },{
+            //Skip a turn, next turn, do twice the damage to the leftmost opp.
+            name:"sworddance",
+            fullname:"Sword Dance",
+            description:"Does 5 + unit.level damage to the two leftmost units",
+            action: (targets, unit) => { 
+            },
+            animation: "",
+            target:"",
+            sound: () => {
+                (new Audio("")).play()
+            },
+        }
+    ]
+    for(let spell of spells_definitions){
+        let spell_index = spells.findIndex((e) => e.name == spell.name)
+        spells[spell_index] = spell
+    }
+}
+setupSpells()
 
-spells = [
-    {
-        name:"heal",
-        fullname:"",
-        action: (targets) => { 
-            console.log(targets)
-            for(let target of targets){
-                target.hp += 2
-                if(target.hp > target.maxhp){
-                    target.hp = target.maxhp
+let perks = {}
+let week = 0
+let week_info = []
+
+function runPerks(){
+    for(let structure of player_structures){
+        for(let perk of structure.perks){
+            perks[perk](structure)
+        }
+    }
+    week++
+}
+function setupPerks(){
+    perks = {
+        "rest": (source) => {
+            let heal = 5*source.level
+            let total = 0
+            for(let unit of units){
+                if(player.resources.gold >= 5){
+                    total+=5
+                    player.resources.gold -= 5
+                    unit.hp += 5
+                    unit.hp = unit.hp > unit.maxhp ? unit.maxhp :unit.hp;
                 }
             }
+            week_info.push("Week " + week + ": The " + source.name + " has healed your units by " + heal + "hp for a total of " + total + " gold.")
         },
-        animation: "animation_heal",
-        target:"units",
-        sound: () => {
-            (new Audio("sounds/heal.wav")).play()
+        "interest": (source) =>{
+            let interest = 
+            Math.round(
+                (player.resources.gold * Math.pow(1.01,source.level)) 
+                - player.resources.gold
+            )
+            player.resources.gold += interest
+            week_info.push("Week " + week + ": The " + source.name + " has earned you " + interest + " gold") 
         },
-    },{
-        name:"thunder",
-        fullname:"",
-        action: (targets) => { 
-            for(let target of targets){
-                target.hp -= 2
+        "labor": (source) =>{
+            console.log("LABOR")
+            //week_info.push("Week " + week + ": The " + source.name + " has earned you " + interest) 
+        },
+        "upkeep": (source) =>{
+            let buff = 2 * source.level
+            for(let unit of units){
+                unit.buffs.armor = [() => {
+                    unit.armor += buff
+                }, () => {
+                    unit.armor -= buff
+                }]
+            }
+            week_info.push("Week " + week + ": The " + source.name + " has refurbished your armors for "+ buff) 
+        },
+        "exotictrade": (source) =>{
+            console.log("TRADE")
+        },
+        "inspire": (source) =>{
+            let buff = 2 * source.level
+            for(let unit of units){
+                unit.buffs.damage = [() => {
+                    unit.damage += buff
+                }, () => {
+                    unit.damage -= buff
+                }]
+            }
+            week_info.push("Week " + week + ": The " + source.name + " has inspired your units to do "+ buff + " extra damage") 
+        },
+        "quests": (source) => {
+            let level = source.level * 1
+            let odds = Math.round(Math.random()*100)
+            if(odds > 90){
+                generateQuest({level:level})
+                week_info.push("Week " + week + ": The " + source.name + " has gifted you a quest!")
             }
         },
-        animation: "animation_thunder",
-        target:"opponents",
-        sound: () => {
-            (new Audio("sounds/thunder.wav")).play()
-        },
-    },{
-        name:"burn",
-        fullname:"",
-        action: (targets) => { 
-            let valid_targets = targets.filter((e) => e.hp > 0)
-            if(valid_targets.length == 0) return null
-            let target = selectRandom(valid_targets)
-            target.hp -= 30
-            return target
-        },
-        animation: "animation_burn",
-        target:"opponents",
-        sound: () => {
-            (new Audio("sounds/burn.wav")).play()
+        "feed": (source) => {
+            //this is for the eventual feeding of orc recruits
+            console.log("feed")
         },
     }
-]
+}
+setupPerks()
 
+function finishMap(map){
+    completedMaps.push(...maps.filter((e) => e.uuid == map.uuid))
+    maps = maps.filter((e) => e.uuid != map.uuid)
+    map.idledUnits = []
+    currentMap = ""
+}

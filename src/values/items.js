@@ -31,16 +31,16 @@ let items_templates = {
         "qualifier":["Of Light", "Of The Protector", "The Depth","Of Stonewall"],
         "perks":["heal"],
         "quality":["Common","Famed","Legendary","Crude"],
-        "images":["images/items/shield.png"],
+        "images":["images/items/armor.png"],
         "armor":[5,10],
         "damage":[0,0]
     },
     "weapon":{
-        "names":["Shield","Buckler","Aegis","Bulwark"],
+        "names":["Sword","Blade","Arm"],
         "qualifier":["Of Light", "Of The Protector", "The Depth","Of Stonewall"],
-        "perks":["heal"],
+        "perks":[],
         "quality":["Common","Famed","Legendary","Crude"],
-        "images":["images/items/shield.png"],
+        "images":["images/items/sword.png"],
         "armor":[0,0],
         "damage":[1,2]
     },
