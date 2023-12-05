@@ -14,7 +14,7 @@ let types_templates = {
             "high":["Domini Veneficus"],
             "top":["Deus Tenebrarum", "Nigra Stella"]
         },
-        "spells":[]
+        "spells":["absorb"]
     },
     "thunder_warrior":{
         "name":"Thunder Warrior",

@@ -7,7 +7,7 @@ function runIdlerEngine(){
     for(let map of completedMaps){
             if(map.idledUnits.length > 0){
                 for(let unit of map.idledUnits){
-                    if(unit.hp > 0){
+                    if(unit.hp > 1){
                         setXp(5 * map.level, [unit]) 
                         unit.hp -= 1
                         //update dialog?
@@ -24,9 +24,20 @@ function runIdlerEngine(){
                     generateQuest({level:map.level})
                     updateQuestPanel()
                 }
+                odds = Math.floor(Math.random()*100)
+                cap = 95 - (map.level* amt)
+                if(odds > cap){
+                    addWorker()
+                }
             }
         }
     }
+}
+
+function addWorker(map){
+    let types = map.spawn    
+    let type = selectRandom(types)
+    player.workers[type] ? player.workers[type] += 1: player.workers[type] = 1;
 }
 
 function idler_timer(){
@@ -53,7 +64,12 @@ function idler_generate_town(){
     struct_div.id = "idler_struct_div"
     struct_div.className = "idler_struct_div"
 
+    let worker_div = document.createElement("div")
+    worker_div.id = "idler_worker_div"
+    worker_div.className = "idler_worker_div"
+
     panel.appendChild(struct_div)
+    panel.appendChild(worker_div)
 
     for(let struct of player_structures){
         let item = document.createElement("div")
@@ -68,7 +84,7 @@ function idler_generate_town(){
 
         let image = document.createElement("img")
         image.id = "idler_struct_img" + struct.uuid
-        image.className = "idler_item_img"
+        image.className = "idler_item_struct_img"
         image.src = struct.image
 
         image.addEventListener("mouseover", (e) => {
@@ -85,9 +101,19 @@ function idler_generate_town(){
 
         item.appendChild(image)
         struct_div.appendChild(item)
-        index++
     }
     
+    for(let type of Object.keys(player.workers)){
+        let div = document.createElement("div")
+        div.style.margin = "5px"
+        let img = document.createElement("img")
+        img.src = "images/workers/worker_orc.png"
+        img.width = 40
+        img.height = 80
+        div.innerHTML += player.workers[type] + " x " 
+        div.appendChild(img)
+        worker_div.appendChild(div)
+    }
 }
 function idler_generate_dungeon(){
     let dialog_panel = document.getElementById("idler_panel")
@@ -212,7 +238,13 @@ function setIdleUnit(e){
     if(idler_selected_unit != null){
         let unit = units.find((unit) => unit.uuid == idler_selected_unit.value) 
         let map = completedMaps.find((map) => map.uuid == e.target.value)
-        map.idledUnits.push(unit)
+        if(map.idledUnits.length < 4){
+            map.idledUnits.push(unit)
+            alert("You've reach the max unit per map")
+        }
+        else{
+            return
+        }
 
         idler_selected_unit.className = "idler_map_unit_img"
 

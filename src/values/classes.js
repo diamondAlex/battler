@@ -70,7 +70,6 @@ let classes_templates = {
         "spells":[
             "burn",
             "thunder"
-            //"ice armor"
         ],
     },
     "Rogue":{

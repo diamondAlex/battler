@@ -1,73 +1,79 @@
 let turnEnded = 0
 let dungeonEnded = 0
-//the implementation lacks consistency, opp and player turns are built different
+
 async function playTurn(){
     if(!positions.find((e) => e != null)) return
     disableBoardButtons()
-    //player turn
-    if(turnEnded == 0 && dungeonEnded ==0){
-        for(let i = positions.length -1;i>=0;i--){
-            let unit = positions[i]
-            if(!unit) continue
-            let index = pickOpponent(opponent_units)
-            if(index == -1) continue
-            let opp = opponent_units[index]
-            //let div = document.getElementById("board_topside")
-            //div.classList.add("animation_div")
-            if(!(unit.hp <= 0 || opp.hp <= 0)){
-                if(calculateDodge(opp)) {
-                    opp.hp = opp.hp - unit.damage
-                }
-                await attack(unit,"bot")
-                await castSpells(unit)
-                if(opp.hp <= 0){
-                    dies(index, 'top')
-                    setXp(opp.givenXp, positions)
-                }
-            }
-        }
-        //opponent turn
-        for(let i = opponent_units.length -1;i>=0;i--){
-            let unit = positions[pickOpponent(positions)]
-            let opp = opponent_units[i]
-            if(!(unit.hp <= 0 || opp.hp <= 0)){
-                if(calculateDodge(unit)) { 
-                    unit.hp = unit.hp - opp.damage 
-                }
-                await attack(opp,"top")
-                //await castSpells(unit)
-                if(unit.hp <= 0){
-                    unit.hp = 0
-                    dies(unit, 'bot')
-                    if(!checkForUnitAlive()){
-                        alert("You have been felled! Retreat back to your town")
-                        leaveMap()
-                        return
+    block_animation.classList.add("block_animation")
+    let queue = [...player_units,...opponent_units].sort((a,b) => {
+        if(a.speed<b.speed) return 1
+        else return -1
+    })
+    for(let curr_unit of queue){
+        if(turnEnded == 0 && dungeonEnded ==0){
+            //player turn
+            if(curr_unit.owner == "unit"){
+                let unit = positions.find((e) => e? e.uuid == curr_unit.uuid: false)
+                if(!unit) continue
+                let index = pickOpponent(opponent_units)
+                if(index == -1) continue
+                let opp = opponent_units[index]
+                //let div = document.getElementById("board_topside")
+                //div.classList.add("animation_div")
+                if(!(unit.hp <= 0 || opp.hp <= 0)){
+                    if(calculateDodge(opp)) {
+                        opp.hp = opp.hp - unit.damage
+                    }
+                    await attack(unit, opp,"bot")
+                    await castSpells(unit)
+                    if(opp.hp <= 0){
+                        dies(index, 'top')
+                        setXp(opp.givenXp, positions)
                     }
                 }
             }
-        }
-        if(!checkForOppAlive()){
-            nbr_levels--
-            if(nbr_levels > 0){
-                turnEnded = 1 
-                betweenRound()
-                swapPlayNext()
+            //opponent turn
+            if(curr_unit.owner == "opponent"){
+                let unit = positions[pickOpponent(positions)]
+                let opp = curr_unit
+                if(!(unit.hp <= 0 || opp.hp <= 0)){
+                    if(calculateDodge(unit)) { 
+                        unit.hp = unit.hp - opp.damage 
+                    }
+                    await attack(opp, unit,"top")
+                    //await castSpells(unit)
+                    if(unit.hp <= 0){
+                        unit.hp = 0
+                        dies(unit, 'bot')
+                        if(!checkForUnitAlive()){
+                            alert("You have been felled! Retreat back to your town")
+                            leaveMap()
+                            return
+                        }
+                    }
+                }
             }
-            else{
-                addSlotEvents()
-                enableBoardButtons()
-                dungeonEnded = 1
-                displayOnSidePanel("Dungeon Ended")
-                addQuest()
-                runReward()
-                finishMap(currentMap)
-            }
+            if(!checkForOppAlive()){
+                nbr_levels--
+                if(nbr_levels > 0){
+                    turnEnded = 1 
+                    betweenRound()
+                    swapPlayNext()
+                }
+                else{
+                    enableBoardButtons()
+                    dungeonEnded = 1
+                    displayOnSidePanel("Dungeon Ended")
+                    addQuest()
+                    runReward()
+                    finishMap(currentMap)
+                }
 
+            }
         }
+    
     }
-    //this is bad. fix the path the code takes to avoid doubling
-    addSlotEvents()
+    block_animation.classList.remove("block_animation")
     enableBoardButtons()
 }
 
@@ -80,38 +86,55 @@ function calculateDodge(unit){
         return 1
     }
     else{
+        animation_root.classList.add("animation_dodge")
+        animation_root.innerHTML= "DODGE!!"
+        setTimeout((e) => {
+            animation_root.innerHTML="" 
+            animation_root.classList.remove("animation_dodge")
+        },1800)
         displayOnSidePanel("Dodged!")
         return 0
     }
 }
 
-async function attack(unit, side){
-    let targetDiv
+async function attack(unit, target, side){
+    let unitDiv
     let animation
+    let enemyDiv
     if(side == 'bot'){
-        targetDiv = document.getElementById("unit_" + unit.uuid)
+        unitDiv = document.getElementById("unit_" + unit.uuid)
         animation = "animation_attack"
+        enemyDiv = document.getElementById("top_animation"+ target.uuid)
     }
     else{
-        targetDiv = document.getElementById("opponent_" + unit.uuid)
+        unitDiv = document.getElementById("opponent_" + unit.uuid)
         animation = "animation_attack_opp"
+        //ok, the animation overlays are numbered by their positions, this seems fine, but slightly different
+        let index = positions.findIndex((e) => e? e.uuid == target.uuid: false)
+        enemyDiv = document.getElementById("bot_animation"+ index)
     }
-    if(!targetDiv.classList.contains(animation)){
-        targetDiv.classList.add(animation)
+    if(!unitDiv.classList.contains(animation)){
+        unitDiv.classList.add(animation)
     }
-
-    updateHps()
 
     let play = (new Audio("sounds/sword.wav")).play()
 
     await (new Promise((resolve) => {
+        setTimeout(()=>resolve(), 100)
+    }))
+
+    enemyDiv.classList.add("animation_hit")
+
+    updateHps()
+
+    await (new Promise((resolve) => {
         setTimeout(() => {
-            if(targetDiv.classList.contains(animation)){
-                targetDiv.classList.remove(animation)
-                let children = targetDiv.children
-                let new_div = targetDiv.cloneNode(true)
-                new_div.children = children
-                targetDiv.parentNode.replaceChild(new_div, targetDiv)
+            if(unitDiv.classList.contains(animation)){
+                unitDiv.classList.remove(animation)
+            }
+            resolve()
+            if(enemyDiv.classList.contains("animation_hit")){
+                enemyDiv.classList.remove("animation_hit")
             }
             resolve()
         }, 1200)
@@ -119,14 +142,22 @@ async function attack(unit, side){
 }
 
 async function castSpells(unit){
-    //this is a shitty fix
     let unit_still_alive = opponent_units.find((e) => e.hp > 0)
     if(!unit_still_alive) return
     if(unit.spells.length != 0){
         let spell = unit.selectedSpell
         if(spell == "") return
+
         let spell_info = spells.find((e) => e.name == spell)
         if(spell_info.action == null) return
+
+        let cost = spell_info.mana
+        if(unit.mana < cost) return
+        else{
+            unit.mana = unit.mana - cost
+            unit.mana < 0 ? unit.mana = 0: false;
+        }
+
         let targets = spell_info.target == 'units' ? player_units : opponent_units; 
         let hitTargets = spell_info.action(targets,unit)
         //this is kicking the can down the road and I don't approve of it.
@@ -156,12 +187,10 @@ async function castSpells(unit){
                 targetDiv.classList.add(spell_info.animation)
             }
             updateHps()
-             promises.push((new Promise((resolve) => {
+            promises.push((new Promise((resolve) => {
                 setTimeout(() => {
                     if(targetDiv.classList.contains(spell_info.animation)){
                         targetDiv.classList.remove(spell_info.animation)
-                        let new_div = targetDiv.cloneNode(true)
-                        targetDiv.parentNode.replaceChild(new_div, targetDiv)
                     }
                     resolve()
                 }, 1200)
@@ -169,7 +198,6 @@ async function castSpells(unit){
         }
         await Promise.all(promises)
     }
-    
 }
 
 function nextLevel(){
@@ -206,7 +234,7 @@ function betweenRound(){
     let heal = roll([2,5],1)
     for(unit of positions){
         if(unit){
-            if(unit.hp < unit.maxhp){
+            if(unit.hp < unit.maxhp && unit.hp > 0){
                 unit.hp = unit.hp + heal > unit.maxhp ? unit.maxhp : unit.hp + heal;
             }
         }
@@ -235,14 +263,20 @@ function setXp(givenXp, targets){
 }
 
 function leaveMap(){
+    toggleButtons()
+    runPostDungeon()
     dungeonEnded = 0
     turnEnded = 0
     player_units = []
     opponent_units = []
     positions = []
-    toggleButtons(["player","board","maps","units","quests","town"])
-    runPostDungeon()
-    generateMapsTab()
+    let over = checkGameOver()
+    if(over == -1) generateCreationMenu()
+    else generateMapsTab()
+}
+
+function checkGameOver(){
+    return units.findIndex((e) => e.hp > 0)
 }
 
 function checkForUnitAlive(){
@@ -296,6 +330,7 @@ function dies(unit, side){
     else{
         let overlay = document.getElementById(side + "_overlay" +unit.uuid)
         overlay.classList.add("dead")
+        dead_units.push(unit)
     }
 }
 
@@ -329,9 +364,24 @@ function runPostDungeon(){
     let heal = roll([2,5],1)
     for(unit of positions){
         if(unit){
-            if(unit.hp < unit.maxhp){
+            if(unit.hp < unit.maxhp && unit.hp > 0){
                 unit.hp = unit.hp + heal > unit.maxhp ? unit.maxhp : unit.hp + heal;
             }
         }
     }
+    let mana = roll([10,20],1)
+    for(unit of positions){
+        if(unit){
+            console.log("healing mana?")
+            if(unit.mana < unit.maxmana){
+                unit.mana = unit.mana + mana > unit.maxmana ? unit.maxmana : unit.mana + mana;
+            }
+        }
+    }
+}
+
+//utils
+function displayOnSidePanel(text){
+    let panel = document.getElementById("panel_topside")
+    panel.innerHTML = text
 }

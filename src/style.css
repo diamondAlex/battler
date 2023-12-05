@@ -91,6 +91,13 @@ img{
     font-size: 125%;
     border: solid;
 }
+.idler_worker_div{
+    position: relative;
+    width: 35%;
+    height: 90%;
+    margin: 5px;
+    border: solid;
+}
 .idler_struct_div{
     position: relative;
     width: 35%;
@@ -146,6 +153,10 @@ img{
     height: 85px;
     border: solid; 
     border-radius:5px;
+}
+.idler_item_struct_img{
+    height: 100%;
+    width: 120px;
 }
 .idler_item_map_img{
     height: 100%;
@@ -393,6 +404,8 @@ img{
     border-color: black;
     border-style: groove;
     margin:2%;
+    width: 90;
+    height: 180;
 }
 .player_inventory_div{
     display :flex;
@@ -410,19 +423,31 @@ img{
     padding:5%;
     font-size:150%
 }
-.unit_inventory{
-    font-size: 150%;
-    text-align: center;
-    float:left;
-    flex:2;
-    padding:1%;
+/*UNIT*/
+.unit_character_panel{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+.unit_character_buttons{
+    border-bottom: solid;
+}
+.unit_character_div{
+    margin:2px;
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    overflow-y: hidden;
 }
 .player_inventory{
-    height:100%;
     flex:1;
-    border-right:solid;
-    overflow-y:scroll;
-    overflow-x:hidden;
+    border-right: solid;
+    overflow-y: scroll;
+}
+.unit_inventory{
+    flex:3;
+    background: blue;
+    border: solid;
 }
 .unit_left{
     width:35%;
@@ -455,10 +480,14 @@ img{
 }
 .bg_panel{
     background:rgba(158, 156, 152,0.9);
-    overflow-y:scroll;
+    /*overflow-y:scroll;*/
 }
 .map_panel{
     background:rgba(158, 156, 152,0.5);
+}
+/*MAPS*/
+.maps_unit_panel{
+    overflow-y: scroll;
 }
 .maps_div{
     background:rgba(158, 156, 152,0.5);
@@ -689,7 +718,7 @@ img{
 }
 .animation_attack{
   animation-name: attack;
-  animation-duration: 1s;
+  animation-duration: 800ms;
 }
 @keyframes attack {
     0%{
@@ -713,6 +742,21 @@ img{
     }
 }
 
+.animation_hit{
+  animation-name: hit;
+  animation-duration: 500ms;
+}
+@keyframes hit {
+    from{
+        position:absolute;
+        z-index: 4;
+        background-color: red;
+    }
+    to {
+        background-color: black;
+    }
+}
+
 /*ANIMATION SPELLS*/
 .animation_heal{
   animation-name: heal;
@@ -730,7 +774,21 @@ img{
   animation-name: cleave;
   animation-duration: 800ms;
 }
+.animation_absorb{
+  animation-name: absorb;
+  animation-duration: 800ms;
+}
 
+@keyframes absorb {
+  from {
+      position:absolute;
+      z-index: 4;
+      background:rgba(152, 190, 150,0.3);
+  }
+  to {
+      background:rgba(252, 186, 3,0.3);
+  }
+}
 @keyframes burn {
   from {
       position:absolute;
@@ -766,4 +824,38 @@ img{
     to {
         background-color: black;
     }
+}
+
+.animation_dodge{
+  animation-name:dodge;
+  animation-duration: 1s;
+}
+.block_animation {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 999;
+}
+@keyframes dodge {
+  from {
+      position:absolute;
+      font-size:300%;
+      width:400;
+      height:400;
+      top:50%;
+      left:25%;
+      z-index: 4;
+  }
+  to {
+      position:absolute;
+      color:red;
+      font-size:300%;
+      width:400;
+      height:400;
+      top:45%;
+      left:30%;
+      z-index: 4;
+  }
 }

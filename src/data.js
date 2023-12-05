@@ -52,6 +52,7 @@ let player_structures = []
 let structures = []
 let completedMaps = []
 let workers = []
+let dead_units = []
 //serialize
 //not sure if this will prevent loading empty games or broken games
 function load_game(){
@@ -68,6 +69,7 @@ function load_game(){
     quests = getItem("quests")
     completedMaps = getItem("completedMaps")
     workers = getItem("workers")
+    dead_units = getItem("dead_units")
 
     player_structures = getItem("unit_structures")
     structures = getItem("structures")
@@ -97,6 +99,7 @@ function save(){
         localStorage.setItem("structures",JSON.stringify(structures))
         localStorage.setItem("completedMaps",JSON.stringify(completedMaps))
         localStorage.setItem("workers",JSON.stringify(workers))
+        localStorage.setItem("dead_units",JSON.stringify(workers))
     }
 }
 
@@ -177,6 +180,9 @@ function generatePlayer(name){
         "resources":{
             "gold":120
         },
+        "workers":{
+    
+        },
         "inventory":[
         ]
     }
@@ -246,21 +252,23 @@ function generateOpponent(type,level){
     let images = opponents_img_names.filter((e) => e.includes(status))
     images = images.filter((e) => e.includes(type))
     let opponent = {
-            type:type,
-            name: selectRandom(template.name[status]) + ", " 
-                + selectRandom(template.qualifier[status]),
-            hp:hp,
-            maxhp:hp,
-            damage:template.stats.damage * level,
-            level:level,
-            armor:template.stats.armor * level,
-            exp: Math.round(10 * Math.pow(level, lvlXpRatio)),
-            xpPerLvl:Math.round(10 * Math.pow(level, lvlXpRatio)),
-            image: selectRandom(images),
-            givenXp: Math.round(1 * Math.pow(level, givenXpRatio)),
-            resources:{gold:10*level},
-            inventory:[],
-            spells:[]
+        type:type,
+        name: selectRandom(template.name[status]) + ", " 
+        + selectRandom(template.qualifier[status]),
+        hp:hp,
+        maxhp:hp,
+        damage:template.stats.damage * level,
+        level:level,
+        armor:template.stats.armor * level,
+        speed: roll(template.stats.speed,level),
+        exp: Math.round(10 * Math.pow(level, lvlXpRatio)),
+        xpPerLvl:Math.round(10 * Math.pow(level, lvlXpRatio)),
+        image: selectRandom(images),
+        givenXp: Math.round(1 * Math.pow(level, givenXpRatio)),
+        resources:{gold:10*level},
+        inventory:[],
+        spells:[],
+        owner:"opponent"
         }
     return opponent 
 }
@@ -303,6 +311,7 @@ function generateUnit({type, unitClass,level=1, name, image} = {}){
         roll(class_template.stats.hpPerLvl,level)
     let damage = roll(type_template.stats.dmgPerLvl,level) + 
         roll(class_template.stats.dmgPerLvl,level)
+    let mana = class_template.stats.mana + class_template.stats.manaPerLvl * level
 
     let unit = {
         name:name,
@@ -311,9 +320,10 @@ function generateUnit({type, unitClass,level=1, name, image} = {}){
         level:level,
         hp:hp,
         maxhp:hp,
-        mana:class_template.stats.mana,
-        maxmana:class_template.stats.mana + class_template.stats.manaPerLvl * level,
+        mana:mana,
+        maxmana:mana,
         armor:type_template.stats.armor *level,
+        speed: class_template.stats.speed * level,
         hpPerLvl:
         [   
             type_template.stats.hpPerLvl[0] + class_template.stats.hpPerLvl[0],
@@ -327,12 +337,13 @@ function generateUnit({type, unitClass,level=1, name, image} = {}){
         ],
         exp: 0,
         xpPerLvl:100 * Math.pow(level, lvlXpRatio),
-        buffs:{},
+        buffs:[],
         inventory:{},
         spells:[],
         selectedSpell:"",
         image: image,
-        uuid:uuid
+        uuid:uuid,
+        owner:"unit"
     }
     type_template.spells.forEach((e) => {
         if(!unit.spells.includes(e)){
@@ -498,138 +509,151 @@ function addStructure(structure){
     }
 }
 
-//this is temporary
-function setupSpells(){
-    let spells_definitions= [
-        {
-            name:"cleave",
-            fullname:"",
-            description:"Does 5 + unit.level damage to the two leftmost units",
-            action: (targets, unit) => { 
-                //this is some scared implementation
-                let hits = 2
-                let tries = 3
-                let hitTarget = []
-                while(hits > 0 && tries >= 0){
-                    let target = targets[tries]
-                    if(target.hp > 0){
-                       target.hp -= 5 + unit.level 
-                        hits--
-                        hitTarget.push(targets[tries])
-                    }
-                    tries--
+spells= [
+    {
+        name:"cleave",
+        mana:5,
+        fullname:"",
+        description:"Does 5 + unit.level damage to the two leftmost units",
+        action: (targets, unit) => { 
+            let hits = 2
+            let tries = 3
+            let hitTarget = []
+            while(hits > 0 && tries >= 0){
+                let target = targets[tries]
+                if(target.hp > 0){
+                    target.hp -= 5 + unit.level 
+                    hits--
+                    hitTarget.push(targets[tries])
                 }
-                return hitTarget
-            },
-            animation: "animation_cleave",
-            target:"opponents",
-            sound: () => {
-                (new Audio("sounds/sword.wav")).play()
-            },
+                tries--
+            }
+            return hitTarget
         },
-        {
-            name:"block",
-            fullname:"",
-            description:"Does 5 + unit.level damage to the two leftmost units",
-            action: (targets) => { 
-                for(let target of targets){
-                    target.hp += 2
-                    if(target.hp > target.maxhp){
-                        target.hp = target.maxhp
-                    }
-                }
-            },
-            animation: "animation_heal",
-            target:"units",
-            sound: () => {
-                (new Audio("sounds/heal.wav")).play()
-            },
+        animation: "animation_cleave",
+        target:"opponents",
+        sound: () => {
+            (new Audio("sounds/sword.wav")).play()
         },
-        {
-            name:"heal",
-            fullname:"",
-            description:"Heals for 2+unit.level hp",
-            action: (targets, unit) => { 
-                for(let target of targets){
-                    target.hp += 2 + unit.level
-                    if(target.hp > target.maxhp){
-                        target.hp = target.maxhp
-                    }
+    },
+    {
+        name:"absorb",
+        mana:5,
+        fullname:"",
+        description:"Does 12 + level damage to a unit, heals for 5+level if it kills it",
+        action: (targets,unit) => { 
+            let valid_targets = targets.filter((e) => e.hp > 0)
+            if(valid_targets.length == 0) return null
+            let target = selectRandom(valid_targets)
+            target.hp -= 12 + unit.level
+            if(target.hp <= 0){
+                unit.hp += 5 + unit.level
+                if(unit.hp > unit.maxhp){
+                    unit.hp = unit.maxhp
                 }
-            },
-            animation: "animation_heal",
-            target:"units",
-            sound: () => {
-                (new Audio("sounds/heal.wav")).play()
-            },
-        },{
-            name:"thunder",
-            fullname:"",
-            description:"Does 3 + unit.level/2 damage to all enemies",
-            action: (targets,unit) => { 
-                for(let target of targets){
-                    target.hp -= 3 + Math.floor(unit.level/2)
+            }
+            return [target]
+        },
+        animation: "animation_absorb",
+        target:"opponents",
+        sound: () => {
+            (new Audio("sounds/magic.wav")).play()
+        },
+    },
+    {
+        name:"heal",
+        mana:5,
+        fullname:"",
+        description:"Heals for 2+unit.level hp",
+        action: (targets, unit) => { 
+            for(let target of targets){
+                if(target.hp < 0) continue
+                target.hp += 2 + unit.level
+                if(target.hp > target.maxhp){
+                    target.hp = target.maxhp
                 }
-            },
-            animation: "animation_thunder",
-            target:"opponents",
-            sound: () => {
-                (new Audio("sounds/thunder.wav")).play()
-            },
-        },{
-            name:"burn",
-            fullname:"",
-            description:"Does 13 + unit.level * 1.5 damage to one opponent",
-            action: (targets, unit) => { 
-                let valid_targets = targets.filter((e) => e.hp > 0)
-                if(valid_targets.length == 0) return null
-                let target = selectRandom(valid_targets)
-                target.hp -= 13 + Math.floor(unit.level*1.5)
-                return [target]
-            },
-            animation: "animation_burn",
-            target:"opponents",
-            sound: () => {
-                (new Audio("sounds/burn.wav")).play()
-            },
-        },{
-            name:"lifesteal",
-            fullname:"Lifesteal",
-            description:"Does 10 + 1.5 unit.level damage and heals for 5 + 1.5 unit.level",
-            action: (targets, unit) => { 
-                let valid_targets = targets.filter((e) => e.hp > 0)
-                if(valid_targets.length == 0) return null
-                let target = selectRandom(valid_targets)
-                target.hp -= 10 + Math.floor(unit.level*1.5)
-                unit.hp += 5 + Math.floor(unit.level*1.5)
-                unit.hp = unit.hp > unit.maxhp ? unit.maxhp : unit.hp;
-                return [target]
-            },
-            animation: "animation_burn",
-            target:"opponents",
-            sound: () => {
-                (new Audio("sounds/burn.wav")).play()
-            },
-        },{
-            //Skip a turn, next turn, do twice the damage to the leftmost opp.
-            name:"sworddance",
-            fullname:"Sword Dance",
-            description:"Does 5 + unit.level damage to the two leftmost units",
-            action: (targets, unit) => { 
-            },
-            animation: "",
-            target:"",
-            sound: () => {
-                (new Audio("")).play()
-            },
-        }
-    ]
-    for(let spell of spells_definitions){
-        let spell_index = spells.findIndex((e) => e.name == spell.name)
-        spells[spell_index] = spell
+            }
+        },
+        animation: "animation_heal",
+        target:"units",
+        sound: () => {
+            (new Audio("sounds/heal.wav")).play()
+        },
+    },{
+        name:"thunder",
+        mana:5,
+        fullname:"",
+        description:"Does 4 + unit.level damage to all enemies",
+        action: (targets,unit) => { 
+            for(let target of targets){
+                target.hp -= 4 + Math.floor(unit.level)
+            }
+        },
+        animation: "animation_thunder",
+        target:"opponents",
+        sound: () => {
+            (new Audio("sounds/thunder.wav")).play()
+        },
+    },{
+        name:"burn",
+        mana:5,
+        fullname:"",
+        description:"Does 13 + unit.level * 1.5 damage to one opponent",
+        action: (targets, unit) => { 
+            let valid_targets = targets.filter((e) => e.hp > 0)
+            if(valid_targets.length == 0) return null
+            let target = selectRandom(valid_targets)
+            target.hp -= 13 + Math.floor(unit.level*1.5)
+            return [target]
+        },
+        animation: "animation_burn",
+        target:"opponents",
+        sound: () => {
+            (new Audio("sounds/burn.wav")).play()
+        },
+    },{
+        name:"lifesteal",
+        mana:5,
+        fullname:"Lifesteal",
+        description:"Does 10 + 1.5 unit.level damage and heals for 5 + 1.5 unit.level",
+        action: (targets, unit) => { 
+            let valid_targets = targets.filter((e) => e.hp > 0)
+            if(valid_targets.length == 0) return null
+            let target = selectRandom(valid_targets)
+            target.hp -= 10 + Math.floor(unit.level*1.5)
+            unit.hp += 5 + Math.floor(unit.level*1.5)
+            unit.hp = unit.hp > unit.maxhp ? unit.maxhp : unit.hp;
+            return [target]
+        },
+        animation: "animation_burn",
+        target:"opponents",
+        sound: () => {
+            (new Audio("sounds/burn.wav")).play()
+        },
+    },{
+        name:"sworddance",
+        mana:5,
+        fullname:"Sword Dance",
+        description:"Does 10 + unit.level*1.5 damage to the rightmost unit, extra damage is done to the left most unit",
+        action: (targets, unit) => { 
+            let valid_targets = targets.filter((e) => e.hp > 0)
+            if(valid_targets.length == 0) return null
+            let target = valid_targets.slice(-1)
+            target[0].hp -= 10 + Math.floor(unit.level*1.5)
+            if(target[0].hp < 0){
+                overkill = target[0].hp * -1
+                valid_targets[0].hp -= overkill
+                target.push(valid_targets[0])
+            }
+            return target
+        },
+        animation: "animation_cleave",
+        target:"opponents",
+        sound: () => {
+            (new Audio("sounds/sword.wav")).play()
+        },
     }
-}
-setupSpells()
+]
 
 let perks = {}
 let week = 0
@@ -654,9 +678,11 @@ function setupPerks(){
                     player.resources.gold -= 5
                     unit.hp += 5
                     unit.hp = unit.hp > unit.maxhp ? unit.maxhp :unit.hp;
+                    unit.mana += 5
+                    unit.mana = unit.mana > unit.maxmana ? unit.maxmana :unit.mana;
                 }
             }
-            week_info.push("Week " + week + ": The " + source.name + " has healed your units by " + heal + "hp for a total of " + total + " gold.")
+            week_info.push("Week " + week + ": The " + source.name + " has healed your units by " + heal + "for a total of " + total + " gold.")
         },
         "interest": (source) =>{
             let interest = 
@@ -674,11 +700,6 @@ function setupPerks(){
         "upkeep": (source) =>{
             let buff = 2 * source.level
             for(let unit of units){
-                unit.buffs.armor = [() => {
-                    unit.armor += buff
-                }, () => {
-                    unit.armor -= buff
-                }]
             }
             week_info.push("Week " + week + ": The " + source.name + " has refurbished your armors for "+ buff) 
         },

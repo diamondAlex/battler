@@ -1,6 +1,7 @@
 //VARIABLES, CONSTANTS---------------------------------------------------
 let currentMap = ""
-
+let nbr_levels = 0
+let currentUnit
 const SLOT_MAX = 4
 
 //PARENT DIVS ---------------------------------------------------
@@ -8,12 +9,19 @@ const SLOT_MAX = 4
 let container = document.getElementById("root")
 container.className="root"
 
+let block_animation = document.createElement("div")
+
+let animation_root = document.createElement("div")
+animation_root.id = "animation_root"
+animation_root.style.position = "absolute"
+
 //holds the currently displayed tab
 let tab = document.createElement("div")
 tab.className="tab"
 
 //MENU
 function generateCreationMenu(){
+    container.innerHTML = ""
     let menu = document.createElement("div")
     menu.className = "menu"
     let options = [
@@ -78,6 +86,7 @@ function generateCreationImgPanel(){
     }
     tab.appendChild(panel)
 }
+
 function generateCreationRightPanel(){
     let panel = document.createElement("div")
     panel.id = "creation_right_panel"
@@ -202,16 +211,6 @@ function generateCreationInfo(){
 }
 
 function generateCreationPage(){
-
-    //let body = document.getElementsByTagName("body")[0]
-    //let audio = document.createElement("audio")
-    //audio.autoplay = true
-    //let source = document.createElement("source")
-    //source.src="sounds/soundtrack.mp4"
-    //source.type = "audio/ogg"
-    //audio.appendChild(source)
-    //body.appendChild(audio)
-
     container.innerHTML = ""
     tab.innerHTML = ""
     tab.style = ""
@@ -220,6 +219,7 @@ function generateCreationPage(){
     generateCreationImgPanel()
     generateCreationRightPanel()
 }
+
 //BOARD---------------------------------------------------
 let addSlots = () => {
     let topside = document.getElementById("board_topside")
@@ -240,7 +240,7 @@ let addSlots = () => {
         slot.addEventListener("click", (e) => {
             let opponent = opponent_units[parseInt(e.target.id.slice(-1))]
             let div = document.getElementById("panel_topside") 
-            div.innerHTML = displayOpponentInfoOnBoardPanel(opponent, ["type","name","hp","damage","armor","level","xpPerLvl","givenXp"])
+            div.innerHTML = displayOpponentInfoOnBoardPanel(opponent)
         })
 
         
@@ -452,8 +452,41 @@ function setUnit(container, unit){
     overlay_spells.appendChild(overlay_spell)
     overlay_spells.appendChild(overlay_right_button)
 
+    overlay_spells.addEventListener("mouseover", () =>{
+        let spell_dialog = document.getElementById("spell_dialog")
+        let spell = spells.find((spell) => spell.name == unit.selectedSpell)
+        spell_dialog.innerHTML = displayInfo(spell,["name","description"])
+        spell_dialog.show()
+    })
+    overlay_spells.addEventListener("mouseout", () =>{
+        let spell_dialog = document.getElementById("spell_dialog")
+        spell_dialog.close()
+    })
+    overlay_left_button.addEventListener("click", () => {
+            let newspell
+            let currentSpell = overlay_spell.innerHTML
+            let spell_index = unit.spells.findIndex((e) => e == currentSpell)
+            if(spell_index == 0)
+                newspell = unit.spells[unit.spells.length-1]
+            else
+                newspell = unit.spells[spell_index-1]
+            overlay_spell.innerHTML = newspell
+            unit.selectedSpell = newspell
+        })
+    overlay_right_button.addEventListener("click", () => {
+        let newspell
+        let currentSpell = overlay_spell.innerHTML
+        let spell_index = unit.spells.findIndex((e) => e == currentSpell)
+        let maxIndex = unit.spells.length-1
+        if(spell_index == maxIndex)
+            newspell = unit.spells[0]
+        else
+            newspell = unit.spells[spell_index+1]
+        overlay_spell.innerHTML = newspell
+        unit.selectedSpell = newspell
+    })
 
-    unitDiv.addEventListener("click", (e) => {
+    unitDiv.addEventListener("click", () => {
         let div = document.getElementById("panel_topside")
         div.innerHTML = displayUnitInfoOnBoardPanel(unit)
     })
@@ -485,6 +518,7 @@ function displayOpponentInfoOnBoardPanel(opponent){
     //str = str + "Mana " + opponent.mana + "/" + opponent.maxmana + "<br>" 
     str = str + "Damage " + opponent.damage + "<br>" 
     str = str + "Armor " + opponent.armor + "<br>" 
+    str = str + "Speed " + opponent.speed + "<br>" 
     str = str + "Given Xp " + opponent.givenXp 
     str += '</div>'
     return str
@@ -496,9 +530,10 @@ function displayUnitInfoOnBoardPanel(unit){
     str = str + unit["name"].replaceAll("_"," ") + " - " 
         + capitalizeFirstLetter(unit["type"].replaceAll("_"," ")) 
         + ", " + capitalizeFirstLetter(unit["class"]) + " - LvL " + unit["level"] + "<br>" 
-    str = str + "Hp " + unit.hp + "/" + unit.maxhp + "<br>" 
+    str = str + "Hp " + unit.hp + "/" + unit.maxhp + " - " 
     str = str + "Mana " + unit.mana + "/" + unit.maxmana + "<br>" 
-    str = str + "Damage " + unit.damage + " - Armor " + unit.armor + "<br>" 
+    str = str + "Damage " + unit.damage + " - Armor " + unit.armor + " - " 
+    str = str + "Speed " + unit.speed + "<br>" 
     str = str + "Exp " + unit.exp + "/" + unit.xpPerLvl + "<br>" 
     unit.spells.forEach((e) => {
         str = str + "'" + e + "'" + " "
@@ -511,31 +546,29 @@ function displayUnitInfoOnBoardPanel(unit){
 function setBoardBg(){
     let bg = currentMap.image
     tab.style.backgroundImage = `url('${bg}')`
-    tab.style.backgroundSize = 'contain'
+    tab.style.backgroundSize = 'cover'
 }
 
 function generateBoard(map){
     tab.innerHTML = ""
     tab.style = ""
-    if(map != null)
+    if(map != null){
         currentMap = map
+        console.log(map)
+        nbr_levels = map.levels
+        console.log(nbr_levels)
+    }
+
     addBoard()
     addBoardPanels()
     addSlots()
     setBoardBg()
     initGame()
-    addSlotEvents()
-}
 
-//utils
-function displayOnSidePanel(text){
-    let panel = document.getElementById("panel_topside")
-    panel.innerHTML = text
 }
 
 // EVENTS ---------------------------------------------------
 function selectUnit(e){
-    console.log(e)
     let index = positions.findIndex((x) => {
         if(x){
             let uuid = parseInt(e.target.id.split("_")[1])
@@ -549,6 +582,8 @@ function selectUnit(e){
     e.dataTransfer.setData("data", JSON.stringify({from:index,id:e.target.id}))
 }
 
+//the conditions here are weak, how is e.target.children.length == 1 really representative
+//of the target and how does that not break all the time?
 function dropUnit(e){
     e.preventDefault()
     let data = JSON.parse(e.dataTransfer.getData("data"))
@@ -557,7 +592,6 @@ function dropUnit(e){
     let from = data.from
     let to = e.target.id.slice(-1)
     //setting unit on board from the right panel
-    //this is bad, alert,alert, this is bad, must fix, dangerdanger
     if(e.target.children.length == 1 && !e.target.id.includes("panel")){
         e.target.appendChild(document.getElementById(id))
         for(let i = 0;i<positions.length;i++){
@@ -572,7 +606,7 @@ function dropUnit(e){
         positions[to] = player_units.find((e) => e.uuid == unit_uuid)
     }
     //prevents moving within the right panel.
-    else if(e.target.id.includes("bot_slot_panel_") && from == -1){
+    else if(e.target.parentNode.id.includes("bot_slot_panel_") && from == -1){
         return
     }
     //from board to right panel
@@ -601,8 +635,16 @@ function dropUnit(e){
         let container_for_from_div = div_to.parentNode 
         let container_for_to_div = div_from.parentNode
 
-        container_for_from_div.innerHTML = ""
-        container_for_to_div.innerHTML = ""
+        if(container_for_to_div.id.includes("panel")){
+            document.getElementById("bot_overlay_spells"+unit_index_to).style.visibility = "hidden"
+            document.getElementById("bot_overlay_spells"+unit_index_from).style.visibility = "visible"
+        }else if(container_for_from_div.id.includes("panel")){
+            document.getElementById("bot_overlay_spells"+unit_index_from).style.visibility = "hidden"
+            document.getElementById("bot_overlay_spells"+unit_index_to).style.visibility = "visible"
+        }
+
+        //container_for_from_div.innerHTML = ""
+        //container_for_to_div.innerHTML = ""
 
         container_for_from_div.appendChild(div_from)
         container_for_to_div.appendChild(div_to)
@@ -638,66 +680,6 @@ function setDnd(){
         slot.ondrop = dropUnit
         slot.ondragover = (e) => { e.preventDefault() }
     }
-}
-
-function addSlotEvents(){
-    for(let unit of player_units){
-        if(!unit) continue
-        //spell events
-        let overlay_spells = document.getElementById("bot_overlay_spells"+unit.uuid)
-        overlay_spells.addEventListener("mouseover", (e) =>{
-            let spell_dialog = document.getElementById("spell_dialog")
-            let spell = spells.find((spell) => spell.name == unit.selectedSpell)
-            spell_dialog.innerHTML = displayInfo(spell,["name","description"])
-            spell_dialog.show()
-        })
-        overlay_spells.addEventListener("mouseout", (e) =>{
-            let spell_dialog = document.getElementById("spell_dialog")
-            spell_dialog.close()
-        })
-        //ooff
-        let overlay_spell = overlay_spells.children[1]
-        //todo: This is absolute trash. Using an index here is suicide. Don't say I didn't warn you, dumbass.
-        overlay_spells.children[0].addEventListener("click", (e) => {
-            let newspell
-            let currentSpell = overlay_spell.innerHTML
-            let spell_index = unit.spells.findIndex((e) => e == currentSpell)
-            if(spell_index == 0)
-                newspell = unit.spells[unit.spells.length-1]
-            else
-                newspell = unit.spells[spell_index-1]
-            overlay_spell.innerHTML = newspell
-            unit.selectedSpell = newspell
-        })
-        overlay_spells.children[2].addEventListener("click", (e) => {
-            let newspell
-            let currentSpell = overlay_spell.innerHTML
-            let spell_index = unit.spells.findIndex((e) => e == currentSpell)
-            let maxIndex = unit.spells.length-1
-            if(spell_index == maxIndex)
-                newspell = unit.spells[0]
-            else
-                newspell = unit.spells[spell_index+1]
-            overlay_spell.innerHTML = newspell
-            unit.selectedSpell = newspell
-        })
-        //click events
-        let slot = document.getElementById("unit_"+unit.uuid)
-        slot.ondragstart = selectUnit
-        slot.addEventListener("click", () => {
-            let div = document.getElementById("panel_topside")
-            div.innerHTML = displayUnitInfoOnBoardPanel(unit,["name","type","lass","damage","armor","exp","xpPerLvl","level"])
-        })
-    }
-    for(let unit of opponent_units){
-        if(!unit) continue
-        let slot = document.getElementById("top_animation"+unit.uuid)
-        slot.addEventListener("click", () => {
-            let div = document.getElementById("panel_topside")
-            div.innerHTML = displayOpponentInfoOnBoardPanel(unit,["name","type","hpPerLvl","damage","armor","exp","level"])
-        })
-    }
-    setDnd()
 }
 
 //IDLER TAB -----------------------------------------------------
@@ -781,7 +763,6 @@ function generatePlayerLeftPanel(){
 
     leftPanel.appendChild(text_div)
 
-
     tab.append(leftPanel)
 }
 
@@ -800,7 +781,6 @@ function displayPlayerInfo(player){
 }
 
 function displayWeekInfo(){
-    let max_display = 20
     let panel = document.getElementById("player_right_panel")
     panel.innerHTML = ""
     for(let week of week_info){
@@ -1009,7 +989,7 @@ function displayUnitsOnPanel(){
     if(!leftPanel) leftPanel = document.getElementById("unit_panel")
     leftPanel.innerHTML = ""
     leftPanel.id = "unit_panel"
-    leftPanel.className = "left bg_panel"
+    leftPanel.className = "left bg_panel maps_unit_panel"
 
     let map_button = document.createElement("button")
     map_button.className = "button_style"
@@ -1056,15 +1036,6 @@ function displayUnitsOnPanel(){
     displayUnitsOnRightPanel()
 }
 
-function updateUnitText(){
-    let div = document.getElementById("unit_panel")
-    for(let child in div.children){
-        if(child.className == "unit_info_div"){
-            let span = child.children.filter((e) => e.className == "unit_info")
-        }
-    }
-}
-
 function generateRightInfoPanel(){
     let rightPanel = document.createElement("div")
     rightPanel.id = "right_panel"
@@ -1092,11 +1063,6 @@ function generateMapInfoPanel(){
     rightPanel.append(mapPanel)
 }
 
-//a whole function, really?
-function setNbr_level(nbr){
-    nbr_levels = nbr
-}
-
 function fillMapInfoPanel(map){
     let mapPanel = document.getElementById("map_info_panel")
     let img = document.createElement("img")
@@ -1108,7 +1074,6 @@ function fillMapInfoPanel(map){
     mapPanel.innerHTML += "</div><div style='float:right'>"
     mapPanel.innerHTML +=  displayMapText(map)
     mapPanel.innerHTML += "</div>"
-    setNbr_level(map.levels)
 }
 
 function addUnit(unit){
@@ -1154,10 +1119,6 @@ function generateMapsTab(){
 }
 
 function displayMapText(map){
-    let reward = map.rewards[0]
-    if(reward.length != 0){
-    
-    }
     let str = ''
     str = "<span style='font-size:115%;'>" + str + map["name"].replaceAll("_"," ") + "</span><br>" 
     str = str + "Type - " + map["spawn"][0] + "<br>" 
@@ -1170,20 +1131,19 @@ function displayMapText(map){
 }
 
 // UNIT panel ---------------------------------------------------
-function generateUnitPanel(){
+function generateUnitTab(){
     tab.innerHTML = ""
     tab.style = ""
     tab.style.backgroundImage = "url('images/bg/wall3.png')"
     tab.style.backgroundSize = "cover"
 
+    currentUnit = units[0]
+
     generateUnitLeftPanel()
     generateUnitRightPanel()
 }
+
 function generateUnitLeftPanel(){
-    let unit_info_panel = document.createElement("div")
-    unit_info_panel.id = "unit_info_panel"
-    unit_info_panel.className = "unit_right bg_panel"
-    unit_info_panel.innerHTML = ""
     let unit_div = document.createElement("div")
     unit_div.id = "unit_div"
     unit_div.className = "unit_left bg_panel"
@@ -1210,21 +1170,130 @@ function generateUnitLeftPanel(){
     unitButtons.forEach((e) => unit_div.appendChild(e))
 
     tab.appendChild(unit_div)
+}
+
+function generateUnitRightPanel(){
+    let unit_info_panel = document.createElement("div")
+    unit_info_panel.id = "unit_info_panel"
+    unit_info_panel.className = "unit_right bg_panel"
+    unit_info_panel.innerHTML = ""
+
     tab.appendChild(unit_info_panel)
+    generateUnitCharacterPanel()
+}
+
+function generateUnitCharacterPanel(){
+    let panel = document.getElementById("unit_info_panel") 
+    panel.innerHTML = ""
+
+    let charpanel = document.createElement("div")
+    charpanel.id = "unit_character_panel"
+    charpanel.className = "unit_character_panel"
+
+    let char_div = document.createElement("div")
+    char_div.id = "unit_character_div"
+    char_div.className = "unit_character_div"
+
+    let button_div = document.createElement("div")
+    button_div.id = "unit_character_buttons"
+    button_div.className = "unit_character_buttons"
+
+    let button_inventory = document.createElement("button")
+    button_inventory.innerHTML = "inventory"
+    button_inventory.className = "tab_button"
+    button_inventory.addEventListener("click", () => {
+        generateInventoryPanel()
+    })
+
+    let button_character = document.createElement("button")
+    button_character.innerHTML = "character"
+    button_character.className = "tab_button"
+    button_character.addEventListener("click", () => {
+        generateCharacterInfoPanel()
+    })
+
+    button_div.appendChild(button_character)
+    button_div.appendChild(button_inventory)
+    charpanel.appendChild(button_div)
+    charpanel.appendChild(char_div)
+    
+    panel.appendChild(charpanel)
+
+    generateCharacterInfoPanel()
+
+}
+
+function generateCharacterInfoPanel(){
+    let panel = document.getElementById("unit_character_div")
+    panel.innerHTML = displayInfo(currentUnit)
+}
+
+function generateInventoryPanel(){
+    let panel = document.getElementById("unit_character_div") 
+    panel.innerHTML = ""
+    let player_inventory = document.createElement("div")
+    player_inventory.id = "player_inventory"
+    player_inventory.className = "player_inventory"
+    let unit_inventory = document.createElement("div")
+    unit_inventory.id = "unit_inventory"
+    unit_inventory.className = "unit_inventory"
+
+    panel.appendChild(player_inventory)
+    panel.appendChild(unit_inventory)
+
+    generatePlayerInventory()
+    generateUnitInventoryPanel()
+}
+
+function generatePlayerInventory(){
+    let panel = document.getElementById("player_inventory")
+    panel.innerHTML = ""
+    let inventory = player.inventory
+    for(let item of inventory){
+        let div = document.createElement("div")
+        div.className = "player_inventory_div"
+        let img = document.createElement("img")
+        img.className = "player_inventory_img"
+        img.src = item.image
+        img.addEventListener("click", (e) =>{
+            addItemToUnit(item) 
+        })
+        let span = document.createElement('span')
+        span.innerHTML = item.name
+        span.className = "player_inventory_info"
+
+        div.appendChild(img)
+        div.appendChild(span)
+        panel.appendChild(div)
+    }
+}
+
+function addItemToUnit(item){
+    let unit = currentUnit
+    if(!unit) return
+    let type = item["type"]
+    if(unit.inventory[type] != null) return
+    unit.inventory[type] = item
+    player.inventory = player.inventory.filter((e) => e.uuid != item.uuid)
+
+    unit.armor += item.armor
+    unit.damage += item.damage
+
+    let text_span = document.getElementById("unit_text_"+currentUnit.uuid)
+    text_span.innerHTML = displayInfo(unit, Object.keys(unit).slice(0,-5))
+
+    generatePlayerInventory()
+    showUnitInventory(unit)
 }
 
 function generateUnitInventoryPanel(){
-    let panel = document.getElementById("unit_info_panel") 
     let unit_inventory = document.getElementById("unit_inventory")
-    unit_inventory.className = "unit_inventory"
 
     if(!currentUnit){
         unit_inventory.innerHTML = "Select a unit"
-        panel.appendChild(unit_inventory)
         return 
     }
     
-    //todo make this a loop
     unit_inventory.id = "unit_inventory"
     unit_inventory.className = "unit_inventory"
     unit_inventory.style.backgroundImage = "url('images/bg/inventory.png')"
@@ -1279,79 +1348,12 @@ function generateUnitInventoryPanel(){
     unit_inventory.appendChild(shield_slot)
     unit_inventory.appendChild(boots_slot)
 
-    panel.appendChild(unit_inventory)
-
     if(currentUnit){
         showUnitInventory(currentUnit)
     }
 }
 
-
-function generateUnitRightPanel(){
-    let panel = document.getElementById("unit_info_panel") 
-    panel.innerHTML = ""
-    let player_inventory = document.createElement("div")
-    player_inventory.id = "player_inventory"
-    player_inventory.className = "player_inventory"
-    let unit_inventory = document.createElement("div")
-    unit_inventory.id = "unit_inventory"
-
-    panel.appendChild(unit_inventory)
-
-    generatePlayerInventory()
-    generateUnitInventoryPanel()
-}
-
-function generatePlayerInventory(){
-    panel.appendChild(player_inventory)
-    let panel = document.getElementById("player_inventory")
-    panel.innerHTML = ""
-    let inventory = player.inventory
-    for(let item of inventory){
-        let div = document.createElement("div")
-        div.className = "player_inventory_div"
-        let img = document.createElement("img")
-        img.className = "player_inventory_img"
-        img.src = item.image
-        img.width = 90
-        img.heigh = 180
-        img.addEventListener("click", (e) =>{
-            addItemToUnit(item) 
-        })
-        let span = document.createElement('span')
-        span.innerHTML = item.name
-        span.className = "player_inventory_info"
-
-
-        div.appendChild(img)
-        div.appendChild(span)
-        panel.appendChild(div)
-    }
-}
-
-function addItemToUnit(item){
-    let item_slot = document.getElementById("shield" + "_slot")
-
-    let unit = currentUnit
-    if(!unit) return
-    let type = item["type"]
-    if(unit.inventory[type] != null) return
-    unit.inventory[type] = item
-    player.inventory = player.inventory.filter((e) => e.uuid != item.uuid)
-
-    unit.armor += item.armor
-    unit.damage += item.damage
-
-    let text_span = document.getElementById("unit_text_"+currentUnit.uuid)
-    text_span.innerHTML = displayInfo(unit, Object.keys(unit).slice(0,-5))
-
-    generatePlayerInventory()
-    showUnitInventory(unit)
-}
-
-let currentUnit
 function showUnitInventory(unit){
-    let item_slot = document.getElementById("shield" + "_slot")
     currentUnit = unit
     for(let key of Object.keys(unit.inventory)){
         let item = unit.inventory[key]
@@ -1373,7 +1375,6 @@ function showUnitInventory(unit){
             item_slot.removeEventListener("click", removeItem)
             generatePlayerInventory()
         }
-        //If the item is already in inventory, we need to avoid adding a new event
         let image = document.createElement("img")
         image.src = item.image
         image.className = "inventory_image"
@@ -1388,22 +1389,20 @@ function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-function toggleButtons(names){
+function toggleButtons(){
     let buttons = document.getElementsByClassName("tab_button")
     for(let button of buttons){
         button.disabled ? button.disabled = false: button.disabled = true;
     }
 }
 
-//todo modify to print array proper
 function displayInfo(json, keys){
     let str = ''
     if(keys == null){
         for(let key of Object.keys(json)){
             str = str + capitalizeFirstLetter(key) + "\t" + JSON.stringify(json[key]).replaceAll("_"," ") + "<br>" 
         }
-    }
-    else{
+    }else{
         for(let key of keys){
             if(json[key] == null) continue
             str = str + capitalizeFirstLetter(key) + "\t" + JSON.stringify(json[key]).replaceAll("_"," ") + "<br>" 
@@ -1422,6 +1421,9 @@ function initGame(){
 function generateParentInterface(){
     container.innerHTML = ""
     tab.innerHTML = ""
+
+    container.appendChild(animation_root)
+    container.appendChild(block_animation)
 
     let dialog = document.createElement("dialog")
     container.appendChild(dialog)
@@ -1447,7 +1449,7 @@ function generateParentInterface(){
     let unit_panel = document.createElement("button")
     unit_panel.id = "units_button"
     unit_panel.innerHTML = "Units"
-    unit_panel.addEventListener("click", () => generateUnitPanel())
+    unit_panel.addEventListener("click", () => generateUnitTab())
     unit_panel.className = "tab_button"
 
     let quest_panel = document.createElement("button")
@@ -1482,10 +1484,11 @@ function generateParentInterface(){
 }
 
 function generateStartInterface(){
-    startOnBoard()
-    //startOnIdler()
+    //startOnBoard()
+    ////startOnIdler()
+    ////startOnUnits()
 
-    //generateCreationMenu() 
+    generateCreationMenu() 
 }
 
 window.addEventListener("keydown", (e) =>{
@@ -1498,8 +1501,33 @@ window.addEventListener("keydown", (e) =>{
 
 generateStartInterface()
 
-
 //test function
+function startOnUnits(){
+    generatePlayer("bob")
+    player.resources.gold = 10000
+    generateQuest()
+    generateQuest()
+    generateQuest()
+    generateQuest()
+    generateUnit()
+    generateUnit()
+    generateUnit()
+    generateUnit()
+    generateItem()
+    generateItem()
+    generateItem()
+    generateItem()
+    generateItem()
+    generateStructure("tavern")
+    addStructure(structures[0])
+    generateMap()
+    generateCompletedMap()
+    generateCompletedMap()
+    generateCompletedMap()
+    currentMap = maps[0]
+    generateParentInterface()
+    generateUnitTab()
+}
 function startOnIdler(){
     generatePlayer("bob")
     player.resources.gold = 10000
@@ -1507,19 +1535,8 @@ function startOnIdler(){
     generateQuest()
     generateQuest()
     generateQuest()
-    generateQuest()
-    generateQuest()
-    generateQuest()
-    generateQuest()
-    generateQuest()
-    generateQuest()
-    generateQuest()
-    generateQuest()
-    generateQuest()
-    generateQuest()
-    generateQuest()
-    generateQuest()
-    generateQuest()
+    generateUnit()
+    generateUnit()
     generateUnit()
     generateUnit()
     generateUnit()
@@ -1531,25 +1548,23 @@ function startOnIdler(){
     generateCompletedMap()
     generateCompletedMap()
     currentMap = maps[0]
+    addWorker(completedMaps[0])
     generateParentInterface()
     generateIdlerTab()
+    //idler_generate("town")
 }
+
 function startOnBoard(){
     //load_game()
     generatePlayer("bob")
     player.resources.gold = 10000
-    generateUnit()
-    generateUnit()
-    generateUnit()
-    generateUnit()
-    generateUnit()
-    generateUnit()
-    generateUnit()
-    generateUnit()
+    //generateUnit()
+    //generateUnit()
+    //generateUnit()
+    //generateUnit()
     generateUnit()
     generateStructure("forge")
     generateStructure("hall")
-    let st = generateStructure("hall")
     generateStructure("hall")
     generateStructure("hall")
     generateStructure("merchant")
@@ -1560,8 +1575,7 @@ function startOnBoard(){
     generateCompletedMap()
     generateCompletedMap()
     currentMap = maps[0]
-    setNbr_level(currentMap.levels)
-    player_units = [units[0],units[1],units[2],units[3]]
+    player_units = [units[0]]
     generateQuest()
     generateParentInterface()
     //generateTownTab()
