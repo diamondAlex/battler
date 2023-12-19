@@ -9,6 +9,7 @@ let types_templates = {
             "ppl":2,
         },
         "qualifier":{
+            //rethink those, too cringe
             "low":["Legionarius"],
             "mid":["Nero Centurio"],
             "high":["Domini Veneficus"],
@@ -70,8 +71,8 @@ let types_templates = {
         "spells":[]
     },
     "sentinels":{
-        //add something to the name
-        "name":"The sentinels",
+        //rething the name
+        "name":"High Sentinels",
         "stats":{
             "minHp": 28,
             "hpPerLvl":[2,3], 

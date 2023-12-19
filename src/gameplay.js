@@ -46,7 +46,7 @@ async function playTurn(){
                         unit.hp = 0
                         dies(unit, 'bot')
                         if(!checkForUnitAlive()){
-                            alert("You have been felled! Retreat back to your town")
+                            popDialog("You have been felled! Retreat back to your town")
                             leaveMap()
                             return
                         }

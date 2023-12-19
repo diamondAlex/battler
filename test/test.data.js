@@ -31,10 +31,16 @@ let tests_data = [
             root.innerHTML += `roll test PASSED expected ${input[0]*2} - ${input[1]*2} got ${res} `
         }
     },
+    () => {
+        for(let i=0;i<3;i++){
+            let unit = generateUnit()
+            root.innerHTML += JSON.stringify(unit) + "<br/><br/>"
+        }
+    },
 ]
 
 //tests_data.forEach((test) => {
     //root.innerHTML += "<br>"
     //test()
 //})
-tests_data[1]()
+tests_data[3]()

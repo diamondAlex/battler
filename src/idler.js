@@ -240,7 +240,7 @@ function setIdleUnit(e){
         let map = completedMaps.find((map) => map.uuid == e.target.value)
         if(map.idledUnits.length < 4){
             map.idledUnits.push(unit)
-            alert("You've reach the max unit per map")
+            popDialog("You've reach the max unit per map")
         }
         else{
             return

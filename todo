@@ -1,11 +1,20 @@
-final dungeon xp needs to be calculated for dungeon lvl and split over the 1-4 units on the board
-use different border colors on structs to indicate the struct level (black -> bronze -> silver -> gold)
-right panel on board should display the list of moves/attacks done in a bg2 style, stats can be displayed on hover
-names have to fit gender
-dungeon background image shouldn't be the map image.
-make a simulation module to run fake games (for balance and also to see if data stays ok during long games)
-change the alerts() for dialog pop ups with their own style
-limit the image use for characters to 1.
-Boss dungeon
-the bank can't give money on rest otherwise it's an infinite money loop, it should probably just be on the idler
-units need to be moved to the right panel when a map in idler is removed
+CURRENT:
+    there's a confirm() in there that has to be converted to a dialog popup 
+    display hp as HP/MAXHP
+    style the dialog, add enter as a lister to close the dialog
+    units need to be moved to the right panel when a map in idler is removed
+    dungeon background image shouldn't be the map image.
+
+LOW PRIO:
+    the images in the unit tabs somehow end up being different width
+    remove displayInfo() and have custom function for each display needs and please dont make it dependant on key position
+    split the image by type and class
+
+LATER:
+    make a simulation module to run fake games (for balance and also to see if data stays ok during long games)
+    limit the image use for characters to 1.
+    the bank can't give money on rest otherwise it's an infinite money loop, it should probably just be on the idler
+    final dungeon xp needs to be calculated for dungeon lvl and split over the 1-4 units on the board
+    use different border colors on structs to indicate the struct level (black -> bronze -> silver -> gold)
+    right panel on board should display the list of moves/attacks done in a bg2 style, stats can be displayed on hover
+    Boss dungeon

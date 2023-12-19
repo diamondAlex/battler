@@ -304,8 +304,11 @@ function generateUnit({type, unitClass,level=1, name, image} = {}){
     let type_template = types_templates[type]
     let class_template = classes_templates[unitClass]
     let status = getStatus(level)
-    if(name == null) name = selectRandom(list_of_names.filter((e) => e[1] == 'Male'))[0]
-    if(image == null) image = selectRandom(units_img_names)
+    if(name == null) {
+        let info = selectRandom(list_of_names)
+        name = info[0]
+        image = selectRandom(units_img_names.filter((e) => e.includes(info[1])))
+    }
     let hp = type_template.stats.minHp + 
         roll(type_template.stats.hpPerLvl,level) + 
         roll(class_template.stats.hpPerLvl,level)
@@ -340,6 +343,7 @@ function generateUnit({type, unitClass,level=1, name, image} = {}){
         buffs:[],
         inventory:{},
         spells:[],
+        type_name:type_template.name,
         selectedSpell:"",
         image: image,
         uuid:uuid,
@@ -357,6 +361,7 @@ function generateUnit({type, unitClass,level=1, name, image} = {}){
     })
     uuid++
     units.push(unit)
+    return unit
 }
 
 function selectRandomKey(obj){
@@ -505,7 +510,7 @@ function addStructure(structure){
         player.resources.gold -= structure.cost["gold"]
     }
     else{
-        alert("No enough gold!")
+        popDialog("No enough gold!")
     }
 }
 

@@ -19,11 +19,27 @@ animation_root.style.position = "absolute"
 let tab = document.createElement("div")
 tab.className="tab"
 
+//DIALOG
+function popDialog(text){
+    let dialog = document.getElementById("alert_dialog")
+    console.log(dialog)
+    dialog.innerHTML = text
+    let closeButton = document.createElement("button")
+    closeButton.innerHTML = "ok"
+    closeButton.addEventListener("click",() => {
+        let dialog = document.getElementById("alert_dialog")
+        dialog.close()
+    })
+    dialog.appendChild(closeButton)
+    dialog.show()
+}
+
 //MENU
 function generateCreationMenu(){
     container.innerHTML = ""
     let menu = document.createElement("div")
     menu.className = "menu"
+
     let options = [
         "play",
         "load",
@@ -51,7 +67,7 @@ function generateCreationMenu(){
         if(loaded){
             generateParentInterface()
         }else{
-            alert('no game to load')
+            popDialog('no game to load')
         }
     })
 }
@@ -156,29 +172,29 @@ function generateCreationInfo(){
     span.appendChild(unit_type)
     div.appendChild(span)
 
-    let start = (e) => {
+    let start = () => {
         let image
         try{
             image = document.getElementById("unit_creation_img").children[0].src
         }
         catch(err){
-            alert("plz select an image")
+            popDialog("plz select an image")
             return
         }
         if(player_name.value == ""){
-            alert("need a player name")
+            popDialog("need a player name")
             return
         }
         if(unit_name.value == ""){
-            alert("need a unit name")
+            popDialog("need a unit name")
             return
         }
         if(unit_class.value == ""){
-            alert("need a unit class")
+            popDialog("need a unit class")
             return
         }
         if(unit_type.value == ""){
-            alert("need a unit type")
+            popDialog("need a unit type")
             return
         }
         generatePlayer(player_name.value)
@@ -201,7 +217,7 @@ function generateCreationInfo(){
                 image = document.getElementById("unit_creation_img").children[0].src
             }
             catch(err){
-                alert("plz select an image")
+                popDialog("plz select an image")
                 return
             }
             start(e) 
@@ -216,6 +232,12 @@ function generateCreationPage(){
     tab.style = ""
     tab.style.background = "black"
     container.appendChild(tab)
+
+    //TODO this is ran twice cause the container's innerHTML is deleted. I don't like this at all.
+    let dialog = document.createElement("dialog")
+    dialog.id = "alert_dialog"
+    container.appendChild(dialog)
+
     generateCreationImgPanel()
     generateCreationRightPanel()
 }
@@ -754,7 +776,7 @@ function generatePlayerLeftPanel(){
     restButton.className = "button_style"
     restButton.innerHTML = "rest"
     restButton.addEventListener("click", () =>{
-        alert("resting")
+        popDialog("resting")
         runPerks()
         generatePlayerTab()
         displayWeekInfo()
@@ -895,14 +917,14 @@ function generateQuestLeftPanel(){
                 return false
             })
             quests = new_q_arr
-            alert("quest accepted")
+            popDialog("quest accepted")
             generateQuestTab()
         })
         let button = document.createElement("button")
         button.innerHTML = 'x'
         button.addEventListener("click", (e) => {
             quests = quests.filter((e) => e[2] != quest[2])   
-            alert("quest removed")
+            popDialog("quest removed")
             generateQuestTab()
         })
         cont.appendChild(div)
@@ -1025,7 +1047,7 @@ function displayUnitsOnPanel(){
             if(unit.hp > 0){
                 addUnit(unit)
             }else{
-                alert("unit is too low hp")
+                popDialog("unit is too low hp")
             }
         })
         div.appendChild(img)
@@ -1078,7 +1100,7 @@ function fillMapInfoPanel(map){
 
 function addUnit(unit){
     if(player_units.length >= 4){
-        alert("too many units") 
+        popDialog("too many units") 
         return
     }
     let exits = player_units.find((e) => e.uuid == unit.uuid)
@@ -1130,7 +1152,7 @@ function displayMapText(map){
     return str
 }
 
-// UNIT panel ---------------------------------------------------
+// UNITS panel ---------------------------------------------------
 function generateUnitTab(){
     tab.innerHTML = ""
     tab.style = ""
@@ -1154,14 +1176,14 @@ function generateUnitLeftPanel(){
         div.className = "unit_info_div"
         let span = document.createElement("span")
         span.id = "unit_text_" + unit.uuid
-        span.innerHTML = displayInfo(unit, Object.keys(unit).slice(0,-5))
+        span.innerHTML = displayInfo(unit, Object.keys(unit).slice(0,4))
         span.className = "unit_info"
         let img = document.createElement("img")
         img.src = unit.image
         img.className = "unit_info_img"
         img.addEventListener("click", () =>{
             currentUnit = unit
-            generateUnitRightPanel()
+            generateUnitCharacterPanel()
         })
         div.appendChild(img)
         div.appendChild(span)
@@ -1225,7 +1247,24 @@ function generateUnitCharacterPanel(){
 
 function generateCharacterInfoPanel(){
     let panel = document.getElementById("unit_character_div")
-    panel.innerHTML = displayInfo(currentUnit)
+    panel.innerHTML = ""
+    let img = document.createElement('img')
+    img.src = currentUnit.image
+    img.className = "unit_info_img unit_character_div_img"
+
+    panel.appendChild(img)
+    displayCharacterInfo(panel)
+}
+
+function displayCharacterInfo(panel){
+    let info_char_div = document.createElement("div")
+    info_char_div.className = "unit_character_div_info"
+
+    let info_div = document.createElement("div")
+    info_div.className = "unit_character_div_info_name"
+    info_div.innerHTML = `${currentUnit.name}, ${currentUnit.class} - level ${currentUnit.level} <br/>  ${currentUnit.type_name}`
+    info_char_div.appendChild(info_div)
+    panel.appendChild(info_char_div)
 }
 
 function generateInventoryPanel(){
@@ -1397,6 +1436,7 @@ function toggleButtons(){
 }
 
 function displayInfo(json, keys){
+    console.log(keys)
     let str = ''
     if(keys == null){
         for(let key of Object.keys(json)){
@@ -1426,6 +1466,7 @@ function generateParentInterface(){
     container.appendChild(block_animation)
 
     let dialog = document.createElement("dialog")
+    dialog.id = "alert_dialog"
     container.appendChild(dialog)
 
     let idler_panel = document.createElement("button")
@@ -1485,17 +1526,17 @@ function generateParentInterface(){
 
 function generateStartInterface(){
     //startOnBoard()
-    ////startOnIdler()
-    ////startOnUnits()
+    //startOnIdler()
+    startOnUnits()
 
-    generateCreationMenu() 
+    //generateCreationMenu() 
 }
 
 window.addEventListener("keydown", (e) =>{
     if(e.code == "KeyS" && e.ctrlKey){
         e.preventDefault()
         save()
-        alert("saved")
+        popDialog("saved")
     }
 })
 
